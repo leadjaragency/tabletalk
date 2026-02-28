@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== PLATFORM LEVEL ====================
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  name         String
+  role         String // "super_admin", "restaurant_owner", "restaurant_manager"
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Restaurant {
+  id            String             @id @default(cuid())
+  name          String
+  slug          String             @unique
+  cuisine       String
+  tagline       String?
+  logoUrl       String?
+  phone         String?
+  email         String?
+  address       String?
+  hours         Json?
+  branding      Json?
+  taxRate       Float              @default(0.08)
+  currency      String             @default("USD")
+  status        String             @default("pending")
+  tierId        String?
+  tier          SubscriptionTier?  @relation(fields: [tierId], references: [id])
+  users         User[]
+  categories    Category[]
+  dishes        Dish[]
+  tables        Table[]
+  aiWaiters     AIWaiter[]
+  orders        Order[]
+  tableSessions TableSession[]
+  reviews       Review[]
+  promotions    Promotion[]
+  gameResults   GameResult[]
+  apiUsage      APIUsageLog[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model SubscriptionTier {
+  id             String       @id @default(cuid())
+  name           String
+  maxTables      Int
+  maxWaiters     Int
+  maxTeamMembers Int
+  monthlyPrice   Float
+  features       Json
+  isActive       Boolean      @default(true)
+  restaurants    Restaurant[]
+  createdAt      DateTime     @default(now())
+}
+
+model APIUsageLog {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  endpoint     String
+  tokensUsed   Int
+  cost         Float
+  date         DateTime   @default(now())
+}
+
+// ==================== RESTAURANT LEVEL ====================
+
+model Category {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  name         String
+  sortOrder    Int        @default(0)
+  dishes       Dish[]
+  createdAt    DateTime   @default(now())
+
+  @@unique([restaurantId, name])
+}
+
+model Dish {
+  id           String      @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  name         String
+  description  String
+  price        Float
+  imageUrl     String?
+  imageEmoji   String?
+  spiceLevel   Int         @default(0)
+  isVeg        Boolean     @default(false)
+  isVegan      Boolean     @default(false)
+  isGlutenFree Boolean     @default(false)
+  isJain       Boolean     @default(false)
+  allergens    String[]
+  prepTime     Int         @default(15)
+  isAvailable  Boolean     @default(true)
+  isChefPick   Boolean     @default(false)
+  isPopular    Boolean     @default(false)
+  upsellIds    String[]
+  categoryId   String
+  category     Category    @relation(fields: [categoryId], references: [id])
+  orderItems   OrderItem[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Table {
+  id           String         @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant     @relation(fields: [restaurantId], references: [id])
+  number       Int
+  seats        Int            @default(4)
+  status       String         @default("empty")
+  qrCode       String?
+  waiterId     String?
+  waiter       AIWaiter?      @relation(fields: [waiterId], references: [id])
+  orders       Order[]
+  sessions     TableSession[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([restaurantId, number])
+}
+
+model AIWaiter {
+  id           String        @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id])
+  name         String
+  avatar       String
+  personality  String
+  tone         String        @default("friendly")
+  languages    String[]
+  greeting     String?
+  isActive     Boolean       @default(true)
+  tables       Table[]
+  chatSessions ChatSession[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model TableSession {
+  id           String        @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id])
+  tableId      String
+  table        Table         @relation(fields: [tableId], references: [id])
+  guestCount   Int?
+  dietaryPrefs String[]
+  gamePlayUsed Boolean       @default(false)
+  discount     Float?
+  startedAt    DateTime      @default(now())
+  endedAt      DateTime?
+  chatSessions ChatSession[]
+  orders       Order[]
+  review       Review?
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  sessionId String
+  session   TableSession  @relation(fields: [sessionId], references: [id])
+  waiterId  String
+  waiter    AIWaiter      @relation(fields: [waiterId], references: [id])
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+}
+
+model ChatMessage {
+  id            String      @id @default(cuid())
+  chatSessionId String
+  chatSession   ChatSession @relation(fields: [chatSessionId], references: [id])
+  role          String
+  content       String
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  orderNumber  String
+  tableId      String
+  table        Table       @relation(fields: [tableId], references: [id])
+  sessionId    String
+  session      TableSession @relation(fields: [sessionId], references: [id])
+  items        OrderItem[]
+  subtotal     Float
+  tax          Float
+  discount     Float       @default(0)
+  total        Float
+  status       String      @default("received")
+  specialNotes String?
+  posOrderId   String?
+  posSynced    Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([restaurantId, orderNumber])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  dishId      String
+  dish        Dish     @relation(fields: [dishId], references: [id])
+  quantity    Int
+  unitPrice   Float
+  specialInst String?
+  createdAt   DateTime @default(now())
+}
+
+model Review {
+  id           String       @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
+  sessionId    String       @unique
+  session      TableSession @relation(fields: [sessionId], references: [id])
+  rating       Int
+  comment      String?
+  createdAt    DateTime     @default(now())
+}
+
+model Promotion {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  title        String
+  description  String
+  type         String
+  value        Float
+  freeItemId   String?
+  minOrder     Float?
+  validFrom    DateTime
+  validUntil   DateTime
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+}
+
+model GameResult {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  sessionId    String
+  gameType     String
+  prize        String?
+  discountPct  Float?
+  won          Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+}

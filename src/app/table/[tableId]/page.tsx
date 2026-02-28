@@ -1,0 +1,127 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useCustomer } from "@/lib/CustomerContext";
+import { Loader2, Utensils } from "lucide-react";
+
+export default function TableSplashPage() {
+  const router         = useRouter();
+  const params         = useParams<{ tableId: string }>();
+  const searchParams   = useSearchParams();
+  const restaurantSlug = searchParams.get("restaurant") ?? "";
+
+  const { restaurant, table, waiter, loading, error, setSessionId } = useCustomer();
+
+  const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
+
+  // Once context resolves, create the session + start the 3-second redirect timer
+  useEffect(() => {
+    if (loading) return;
+    if (error || !restaurant || !table) { setPhase("error"); return; }
+
+    setPhase("ready");
+
+    // Create table session — fire-and-forget; timer runs regardless of outcome
+    fetch("/api/sessions", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({
+        restaurantSlug: restaurant.slug,
+        tableNumber:    table.number,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data: { sessionId?: string }) => {
+        if (data.sessionId) setSessionId(data.sessionId);
+      })
+      .catch(() => {
+        // Non-fatal — customer can still browse
+      });
+
+    // Always redirect to chat after 3 seconds
+    const redirectTimer = setTimeout(() => {
+      router.push(
+        `/table/${params.tableId}/chat?restaurant=${encodeURIComponent(restaurantSlug)}`
+      );
+    }, 3000);
+
+    return () => clearTimeout(redirectTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, error, restaurant, table]);
+
+  // ── Error state ─────────────────────────────────────────────────────────
+  if (phase === "error") {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-cu-bg px-8 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
+          <Utensils className="h-8 w-8 text-red-500" />
+        </div>
+        <div>
+          <p className="font-display text-xl font-bold text-cu-text">Table not found</p>
+          <p className="mt-2 text-sm text-cu-text/60">
+            {error ?? "Please scan the QR code on your table again."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Context still loading ───────────────────────────────────────────────
+  if (phase === "loading" || !restaurant || !table) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-gradient-to-b from-[#2D1B0E] to-[#8B1A2B]">
+        <Loader2 className="h-10 w-10 animate-spin text-white/60" />
+      </div>
+    );
+  }
+
+  // ── Full splash screen ──────────────────────────────────────────────────
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-gradient-to-b from-[#2D1B0E] to-[#8B1A2B] px-8 text-center">
+      {/* Restaurant initial badge */}
+      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 text-4xl font-bold text-white shadow-lg backdrop-blur-sm ring-1 ring-white/20">
+        {restaurant.name.charAt(0)}
+      </div>
+
+      {/* Restaurant name + tagline */}
+      <div className="space-y-2">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-white drop-shadow">
+          {restaurant.name}
+        </h1>
+        {restaurant.tagline && (
+          <p className="text-base text-white/70 italic">{restaurant.tagline}</p>
+        )}
+      </div>
+
+      {/* Table number pill */}
+      <div className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-semibold text-white backdrop-blur-sm">
+        Table {table.number} · {table.seats} seats
+      </div>
+
+      {/* AI waiter card */}
+      {waiter && (
+        <div className="flex items-center gap-4 rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-sm">
+          <span className="text-3xl leading-none">{waiter.avatar}</span>
+          <div className="text-left">
+            <p className="text-xs font-medium uppercase tracking-wider text-white/50">
+              Your AI waiter today
+            </p>
+            <p className="text-base font-semibold text-white">{waiter.name}</p>
+            <p className="text-xs text-white/60 capitalize">{waiter.personality}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Connection spinner */}
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+        <p className="text-sm text-white/60">
+          {waiter
+            ? `Connecting to ${waiter.name}\u2026`
+            : "Connecting to your AI waiter\u2026"}
+        </p>
+      </div>
+    </div>
+  );
+}

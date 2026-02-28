@@ -1,0 +1,317 @@
+@import "tailwindcss";
+
+/* ============================================================
+   THEME — Tailwind v4 design tokens
+   All custom utilities are generated from @theme variables.
+   ============================================================ */
+@theme {
+  /* ── Fonts ─────────────────────────────────────────────── */
+  --font-display: var(--font-playfair), "Georgia", serif;
+  --font-sans: var(--font-dm-sans), "system-ui", sans-serif;
+
+  /* ── Super Admin palette (Dark Slate-Indigo) ────────────── */
+  --color-sa-bg:      #0F172A;
+  --color-sa-surface: #1E293B;
+  --color-sa-border:  #334155;
+  --color-sa-accent:  #6366F1;
+  --color-sa-accent-hover: #4F46E5;
+  --color-sa-text:    #F8FAFC;
+  --color-sa-muted:   #94A3B8;
+
+  /* ── Restaurant Admin palette (Dark Warm-Amber) ─────────── */
+  --color-ra-bg:      #0C0A09;
+  --color-ra-surface: #1C1917;
+  --color-ra-border:  #44403C;
+  --color-ra-accent:  #F59E0B;
+  --color-ra-accent-hover: #D97706;
+  --color-ra-text:    #FAFAF9;
+  --color-ra-muted:   #A8A29E;
+
+  /* ── Customer palette (Light Warm-Cream) ────────────────── */
+  --color-cu-bg:      #FDFBF7;
+  --color-cu-surface: #FFFFFF;
+  --color-cu-accent:  #D4740E;
+  --color-cu-accent-hover: #B85C0A;
+  --color-cu-maroon:  #8B1A2B;
+  --color-cu-green:   #1B8C3A;
+  --color-cu-red:     #D63B3B;
+  --color-cu-text:    #2D1B0E;
+  --color-cu-muted:   #8B7355;
+  --color-cu-border:  #E8DFD0;
+
+  /* ── Shared semantic ────────────────────────────────────── */
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error:   #EF4444;
+  --color-info:    #3B82F6;
+
+  /* Status badge colors */
+  --color-status-received:  #3B82F6;
+  --color-status-preparing: #F59E0B;
+  --color-status-ready:     #22C55E;
+  --color-status-served:    #6B7280;
+
+  /* ── Border radius ──────────────────────────────────────── */
+  --radius-xs:  0.25rem;
+  --radius-sm:  0.375rem;
+  --radius-md:  0.5rem;
+  --radius-lg:  0.75rem;
+  --radius-xl:  1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* ── Custom spacing ─────────────────────────────────────── */
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+  --spacing-88: 22rem;
+  --spacing-128: 32rem;
+
+  /* ── Animation tokens ───────────────────────────────────── */
+  --animate-fade-in:    fadeIn 0.25s ease-out;
+  --animate-slide-up:   slideUp 0.3s ease-out;
+  --animate-slide-down: slideDown 0.3s ease-out;
+  --animate-slide-in-right: slideInRight 0.3s ease-out;
+  --animate-pulse-soft: pulseSoft 2s ease-in-out infinite;
+  --animate-spin-slow:  spin 3s linear infinite;
+  --animate-bounce-in:  bounceIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+@keyframes bounceIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Super Admin zone defaults ─── */
+  .zone-super-admin {
+    background-color: #0F172A;
+    color: #F8FAFC;
+    font-family: var(--font-sans);
+  }
+
+  /* ── Restaurant Admin zone defaults ─── */
+  .zone-admin {
+    background-color: #0C0A09;
+    color: #FAFAF9;
+    font-family: var(--font-sans);
+  }
+
+  /* ── Customer zone defaults ─── */
+  .zone-customer {
+    background-color: #FDFBF7;
+    color: #2D1B0E;
+    font-family: var(--font-sans);
+  }
+
+  /* Focus styles */
+  :focus-visible {
+    outline: 2px solid #6366F1;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: #6366F133;
+    color: inherit;
+  }
+
+  /* Inputs */
+  input, textarea, select {
+    font-family: inherit;
+  }
+
+  /* Images */
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Links */
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+/* ============================================================
+   SCROLLBAR STYLES
+   ============================================================ */
+@layer base {
+  /* Dark scrollbar (super-admin & restaurant-admin) */
+  .zone-super-admin ::-webkit-scrollbar,
+  .zone-admin ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .zone-super-admin ::-webkit-scrollbar-track,
+  .zone-admin ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .zone-super-admin ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 9999px;
+  }
+  .zone-super-admin ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+  .zone-admin ::-webkit-scrollbar-thumb {
+    background: #44403C;
+    border-radius: 9999px;
+  }
+  .zone-admin ::-webkit-scrollbar-thumb:hover {
+    background: #57534E;
+  }
+
+  /* Light scrollbar (customer) */
+  .zone-customer ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .zone-customer ::-webkit-scrollbar-track {
+    background: #F5F0E8;
+  }
+  .zone-customer ::-webkit-scrollbar-thumb {
+    background: #C4A882;
+    border-radius: 9999px;
+  }
+  .zone-customer ::-webkit-scrollbar-thumb:hover {
+    background: #A8895C;
+  }
+
+  /* Firefox */
+  .zone-super-admin * { scrollbar-color: #334155 transparent; scrollbar-width: thin; }
+  .zone-admin *        { scrollbar-color: #44403C transparent; scrollbar-width: thin; }
+  .zone-customer *     { scrollbar-color: #C4A882 #F5F0E8;    scrollbar-width: thin; }
+}
+
+/* ============================================================
+   UTILITY COMPONENTS
+   Used across all three portals.
+   ============================================================ */
+@layer components {
+  /* Typing indicator dots for AI chat */
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: currentColor;
+    opacity: 0.6;
+    animation: pulseSoft 1.4s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Spice level dots */
+  .spice-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    display: inline-block;
+  }
+  .spice-dot-filled  { background-color: #EF4444; }
+  .spice-dot-empty   { background-color: #E5E7EB; }
+
+  /* Veg / Non-veg indicators */
+  .veg-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    border: 1.5px solid #1B8C3A;
+    background-color: #1B8C3A;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .non-veg-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    border: 1.5px solid #D63B3B;
+    background-color: #D63B3B;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  /* Glass card effect (used in customer splash) */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,0.08) 50%,
+      rgba(255,255,255,0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}

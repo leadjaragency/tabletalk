@@ -1,0 +1,788 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Plus, Users, QrCode, MessageSquare, ChevronRight, X,
+  Clock, Utensils, Trash2, UserCheck, RefreshCw,
+} from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter } from "@/components/ui/Modal";
+import { TableStatusBadge, OrderStatusBadge } from "@/components/ui/StatusBadge";
+import { Select } from "@/components/ui/Select";
+import { cn, formatTimeAgo } from "@/lib/utils";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface Waiter {
+  id:     string;
+  name:   string;
+  avatar: string;
+}
+
+interface OrderItem {
+  id:       string;
+  quantity: number;
+  dish:     { name: string };
+}
+
+interface Order {
+  id:          string;
+  orderNumber: string;
+  status:      string;
+  total:       number;
+  createdAt:   string;
+  items:       OrderItem[];
+}
+
+interface Session {
+  id:           string;
+  guestCount:   number | null;
+  startedAt:    string;
+  dietaryPrefs: string[];
+}
+
+interface Table {
+  id:          string;
+  number:      number;
+  seats:       number;
+  status:      string;
+  qrCode:      string | null;
+  waiter:      Waiter | null;
+  orders:      Order[];
+  sessions:    Session[];
+  restaurantId: string;
+  createdAt:   string;
+  updatedAt:   string;
+}
+
+type TableStatus = "all" | "occupied" | "ordering" | "billing" | "empty";
+
+export interface TablesPageClientProps {
+  tables:  Table[];
+  waiters: Waiter[];
+  restaurantSlug: string;
+}
+
+// ---------------------------------------------------------------------------
+// Status colours (used for card accent lines)
+// ---------------------------------------------------------------------------
+
+const statusAccent: Record<string, string> = {
+  empty:    "border-l-ra-border",
+  occupied: "border-l-blue-500",
+  ordering: "border-l-amber-500",
+  billing:  "border-l-green-500",
+};
+
+// ---------------------------------------------------------------------------
+// Add Table Modal
+// ---------------------------------------------------------------------------
+
+function AddTableModal({
+  waiters,
+  onClose,
+}: {
+  waiters: Waiter[];
+  onClose:  () => void;
+}) {
+  const router = useRouter();
+  const [number,   setNumber]   = useState("");
+  const [seats,    setSeats]    = useState("4");
+  const [waiterId, setWaiterId] = useState<string | undefined>(undefined);
+  const [error,    setError]    = useState<string | null>(null);
+  const [saving,   setSaving]   = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!number || isNaN(Number(number)) || Number(number) < 1) {
+      setError("Table number must be a positive integer.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/tables", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          number:   Number(number),
+          seats:    Number(seats),
+          waiterId: waiterId ?? null,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? "Failed to create table.");
+      }
+      onClose();
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const waiterOptions = [
+    { value: "", label: "No waiter assigned" },
+    ...waiters.map((w) => ({ value: w.id, label: `${w.avatar} ${w.name}` })),
+  ];
+
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title="Add New Table"
+      description="Add a table to your floor plan. Assign a QR code from the QR Codes page after creation."
+      contentClassName="bg-ra-surface border-ra-border text-ra-text"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="text-xs text-red-400">{error ?? ""}</div>
+          <div className="flex gap-3">
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+            <Button
+              variant="amber"
+              size="sm"
+              loading={saving}
+              onClick={handleSubmit as unknown as React.MouseEventHandler}
+            >
+              Add Table
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-ra-text mb-1">
+              Table Number *
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={number}
+              onChange={(e) => setNumber(e.target.value)}
+              placeholder="e.g. 12"
+              className="w-full rounded-lg border border-ra-border bg-ra-bg px-3 py-2 text-sm text-ra-text placeholder:text-ra-muted/50 focus:border-ra-accent/50 focus:outline-none focus:ring-1 focus:ring-ra-accent/30"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ra-text mb-1">
+              Seats
+            </label>
+            <select
+              value={seats}
+              onChange={(e) => setSeats(e.target.value)}
+              className="w-full rounded-lg border border-ra-border bg-ra-bg px-3 py-2 text-sm text-ra-text focus:border-ra-accent/50 focus:outline-none focus:ring-1 focus:ring-ra-accent/30"
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((n) => (
+                <option key={n} value={n}>{n} seats</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-ra-text mb-1">
+            Assign AI Waiter
+          </label>
+          <Select
+            value={waiterId ?? ""}
+            onValueChange={(v) => setWaiterId(v || undefined)}
+            options={waiterOptions}
+            placeholder="No waiter assigned"
+          />
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Delete Confirmation Modal
+// ---------------------------------------------------------------------------
+
+function DeleteTableModal({
+  table,
+  onClose,
+}: {
+  table:   Table;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [error,   setError]   = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/tables/${table.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? "Failed to delete table.");
+      }
+      onClose();
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title={`Delete Table ${table.number}?`}
+      description="This action cannot be undone. Only empty tables can be deleted."
+      contentClassName="bg-ra-surface border-ra-border text-ra-text"
+      size="sm"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="text-xs text-red-400">{error ?? ""}</div>
+          <div className="flex gap-3">
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={deleting}>Cancel</Button>
+            <Button variant="danger" size="sm" loading={deleting} onClick={handleDelete}>
+              Delete
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <p className="text-sm text-ra-muted">
+        Table <span className="font-semibold text-ra-text">#{table.number}</span> ({table.seats} seats)
+        will be permanently removed from your floor plan.
+      </p>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Table Slide-Over Panel
+// ---------------------------------------------------------------------------
+
+function TableSlideOver({
+  table,
+  waiters,
+  onClose,
+}: {
+  table:   Table;
+  waiters: Waiter[];
+  onClose: () => void;
+}) {
+  const router  = useRouter();
+  const session = table.sessions[0] ?? null;
+  const latestOrder = table.orders[0] ?? null;
+
+  const [assigningWaiter, setAssigningWaiter] = useState(false);
+  const [selectedWaiter,  setSelectedWaiter]  = useState(table.waiter?.id ?? "");
+  const [waiterError,     setWaiterError]     = useState<string | null>(null);
+
+  async function handleReassignWaiter() {
+    setAssigningWaiter(true);
+    setWaiterError(null);
+    try {
+      const res = await fetch(`/api/tables/${table.id}`, {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ waiterId: selectedWaiter || null }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? "Failed to update waiter.");
+      }
+      router.refresh();
+    } catch (err: unknown) {
+      setWaiterError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setAssigningWaiter(false);
+    }
+  }
+
+  const waiterOptions = [
+    { value: "", label: "No waiter" },
+    ...waiters.map((w) => ({ value: w.id, label: `${w.avatar} ${w.name}` })),
+  ];
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div className="fixed right-0 top-0 z-50 h-full w-full max-w-md bg-ra-surface border-l border-ra-border shadow-2xl flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ra-border">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-ra-text">
+              Table {table.number}
+            </h2>
+            <div className="flex items-center gap-2 mt-1">
+              <TableStatusBadge status={table.status as "empty" | "occupied" | "ordering" | "billing"} />
+              <span className="text-xs text-ra-muted flex items-center gap-1">
+                <Users size={11} />
+                {table.seats} seats
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 opacity-50 hover:opacity-100 hover:bg-white/5 transition-all"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+          {/* Active session */}
+          {session && (
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
+                Active Session
+              </h3>
+              <div className="rounded-xl border border-ra-border bg-ra-bg p-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-ra-muted">Started</span>
+                  <span className="text-ra-text">{formatTimeAgo(new Date(session.startedAt))}</span>
+                </div>
+                {session.guestCount && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-ra-muted">Guests</span>
+                    <span className="text-ra-text">{session.guestCount}</span>
+                  </div>
+                )}
+                {session.dietaryPrefs.length > 0 && (
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-ra-muted shrink-0">Dietary</span>
+                    <span className="text-ra-text text-right">
+                      {session.dietaryPrefs.join(", ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Current order */}
+          {latestOrder && (
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
+                Latest Order
+              </h3>
+              <div className="rounded-xl border border-ra-border bg-ra-bg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-ra-text">#{latestOrder.orderNumber}</span>
+                  <OrderStatusBadge status={latestOrder.status as "received" | "preparing" | "ready" | "served"} />
+                </div>
+                <ul className="space-y-1">
+                  {latestOrder.items.map((item) => (
+                    <li key={item.id} className="flex items-center justify-between text-sm">
+                      <span className="text-ra-muted">{item.quantity}× {item.dish.name}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center justify-between pt-1 border-t border-ra-border">
+                  <span className="text-xs text-ra-muted">
+                    {formatTimeAgo(new Date(latestOrder.createdAt))}
+                  </span>
+                  <span className="text-sm font-semibold text-ra-text">
+                    ${latestOrder.total.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Chat log link */}
+          {session && (
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
+                Chat Transcript
+              </h3>
+              <div className="rounded-xl border border-ra-border bg-ra-bg px-4 py-3 text-sm text-ra-muted flex items-center justify-between">
+                <span>View this session&apos;s conversation</span>
+                <ChevronRight size={14} className="text-ra-muted/50" />
+              </div>
+            </section>
+          )}
+
+          {/* Reassign waiter */}
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
+              AI Waiter
+            </h3>
+            <div className="space-y-3">
+              <Select
+                value={selectedWaiter}
+                onValueChange={setSelectedWaiter}
+                options={waiterOptions}
+                placeholder="No waiter assigned"
+              />
+              {waiterError && <p className="text-xs text-red-400">{waiterError}</p>}
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                loading={assigningWaiter}
+                disabled={selectedWaiter === (table.waiter?.id ?? "")}
+                onClick={handleReassignWaiter}
+                leftIcon={<UserCheck size={14} />}
+              >
+                {assigningWaiter ? "Saving…" : "Save Waiter Assignment"}
+              </Button>
+            </div>
+          </section>
+
+          {/* Quick links */}
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
+              Quick Links
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                href="/admin/qr-codes"
+                className="flex items-center gap-2 rounded-xl border border-ra-border bg-ra-bg px-4 py-3 text-sm text-ra-text hover:border-ra-accent/40 hover:bg-white/5 transition-colors"
+              >
+                <QrCode size={15} className="text-ra-muted" />
+                QR Codes
+              </Link>
+              <Link
+                href="/admin/orders"
+                className="flex items-center gap-2 rounded-xl border border-ra-border bg-ra-bg px-4 py-3 text-sm text-ra-text hover:border-ra-accent/40 hover:bg-white/5 transition-colors"
+              >
+                <Utensils size={15} className="text-ra-muted" />
+                Live Orders
+              </Link>
+            </div>
+          </section>
+        </div>
+
+        {/* Footer actions */}
+        <div className="px-6 py-4 border-t border-ra-border flex items-center justify-between">
+          <span className="text-xs text-ra-muted">
+            <Clock size={11} className="inline mr-1" />
+            Updated {formatTimeAgo(new Date(table.updatedAt))}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-red-400 hover:bg-red-500/10"
+              onClick={() => {
+                onClose();
+                // parent handles delete modal via state
+              }}
+              title="Delete table"
+            >
+              <Trash2 size={15} />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Table Card
+// ---------------------------------------------------------------------------
+
+function TableCard({
+  table,
+  onSelect,
+  onDelete,
+}: {
+  table:    Table;
+  onSelect: (t: Table) => void;
+  onDelete: (t: Table) => void;
+}) {
+  const isActive = table.status !== "empty";
+  const latestOrder = table.orders[0] ?? null;
+  const itemSummary = latestOrder?.items
+    .map((i) => `${i.quantity}× ${i.dish.name}`)
+    .join(", ");
+
+  return (
+    <div
+      className={cn(
+        "relative rounded-2xl border bg-ra-surface cursor-pointer group",
+        "border-l-4 transition-all duration-200",
+        "hover:border-ra-accent/40 hover:shadow-lg hover:shadow-black/20",
+        statusAccent[table.status] ?? "border-l-ra-border",
+        isActive ? "border-ra-border/80" : "border-ra-border/40"
+      )}
+      onClick={() => onSelect(table)}
+    >
+      {/* Delete button (top-right, visible on hover) */}
+      {table.status === "empty" && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(table); }}
+          className="absolute right-2 top-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-red-500/10 hover:text-red-400 transition-all z-10"
+          title="Delete table"
+        >
+          <Trash2 size={13} />
+        </button>
+      )}
+
+      <div className="p-5">
+        {/* Top row: number + status */}
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <div className="text-3xl font-display font-bold text-ra-text leading-none">
+              {table.number}
+            </div>
+            <div className="flex items-center gap-1 mt-1.5 text-ra-muted">
+              <Users size={11} />
+              <span className="text-xs">{table.seats} seats</span>
+            </div>
+          </div>
+          <TableStatusBadge
+            status={table.status as "empty" | "occupied" | "ordering" | "billing"}
+          />
+        </div>
+
+        {/* Waiter */}
+        <div className="flex items-center gap-2 mb-3">
+          {table.waiter ? (
+            <>
+              <span className="text-base leading-none">{table.waiter.avatar}</span>
+              <span className="text-xs text-ra-muted truncate">{table.waiter.name}</span>
+            </>
+          ) : (
+            <span className="text-xs text-ra-muted/50 italic">No waiter assigned</span>
+          )}
+        </div>
+
+        {/* Order summary */}
+        {latestOrder ? (
+          <div className="rounded-lg bg-ra-bg border border-ra-border/60 px-3 py-2">
+            <div className="flex items-center justify-between mb-0.5">
+              <OrderStatusBadge
+                status={latestOrder.status as "received" | "preparing" | "ready" | "served"}
+                className="text-[10px]"
+              />
+              <span className="text-xs font-medium text-ra-text">
+                ${latestOrder.total.toFixed(2)}
+              </span>
+            </div>
+            {itemSummary && (
+              <p className="text-[11px] text-ra-muted truncate mt-1">{itemSummary}</p>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-lg bg-ra-bg/40 border border-dashed border-ra-border/40 px-3 py-2">
+            <p className="text-[11px] text-ra-muted/40 text-center">No active order</p>
+          </div>
+        )}
+
+        {/* Footer: QR + Chat buttons */}
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-ra-border/40">
+          <Link
+            href="/admin/qr-codes"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors"
+          >
+            <QrCode size={11} /> QR
+          </Link>
+          <button
+            onClick={(e) => { e.stopPropagation(); onSelect(table); }}
+            className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors"
+          >
+            <MessageSquare size={11} /> Chat log
+          </button>
+          <span className="ml-auto text-xs text-ra-muted/40">
+            <Clock size={10} className="inline mr-0.5" />
+            {formatTimeAgo(new Date(table.updatedAt))}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+export function TablesPageClient({ tables, waiters, restaurantSlug }: TablesPageClientProps) {
+  const router = useRouter();
+
+  const [filter,       setFilter]       = useState<TableStatus>("all");
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [deleteTarget,  setDeleteTarget]  = useState<Table | null>(null);
+  const [showAddModal,  setShowAddModal]  = useState(false);
+  const [refreshing,    setRefreshing]    = useState(false);
+
+  // Counts for filter tabs
+  const counts = {
+    all:      tables.length,
+    occupied: tables.filter((t) => t.status === "occupied").length,
+    ordering: tables.filter((t) => t.status === "ordering").length,
+    billing:  tables.filter((t) => t.status === "billing").length,
+    empty:    tables.filter((t) => t.status === "empty").length,
+  };
+
+  const filtered = filter === "all" ? tables : tables.filter((t) => t.status === filter);
+
+  const handleManualRefresh = useCallback(async () => {
+    setRefreshing(true);
+    router.refresh();
+    setTimeout(() => setRefreshing(false), 800);
+  }, [router]);
+
+  const handleDeleteFromSlideOver = useCallback(() => {
+    if (selectedTable) {
+      const t = selectedTable;
+      setSelectedTable(null);
+      setTimeout(() => setDeleteTarget(t), 150);
+    }
+  }, [selectedTable]);
+
+  const FILTERS: { key: TableStatus; label: string }[] = [
+    { key: "all",      label: "All" },
+    { key: "occupied", label: "Occupied" },
+    { key: "ordering", label: "Ordering" },
+    { key: "billing",  label: "Billing" },
+    { key: "empty",    label: "Empty" },
+  ];
+
+  return (
+    <div className="p-6 lg:p-8 space-y-6">
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-ra-text">Floor Plan</h1>
+          <p className="text-sm text-ra-muted mt-0.5">
+            {counts.all} tables · {counts.all - counts.empty} active
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleManualRefresh}
+            className={cn(
+              "rounded-lg p-2 text-ra-muted hover:bg-white/5 hover:text-ra-text transition-all",
+              refreshing && "animate-spin text-ra-accent"
+            )}
+            title="Refresh"
+          >
+            <RefreshCw size={16} />
+          </button>
+          <Button
+            variant="amber"
+            size="sm"
+            leftIcon={<Plus size={15} />}
+            onClick={() => setShowAddModal(true)}
+          >
+            Add Table
+          </Button>
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-1">
+        {FILTERS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all",
+              filter === key
+                ? "bg-ra-accent text-stone-900"
+                : "text-ra-muted hover:bg-white/5 hover:text-ra-text"
+            )}
+          >
+            {label}
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                filter === key
+                  ? "bg-black/20 text-stone-900"
+                  : "bg-white/10 text-ra-muted"
+              )}
+            >
+              {counts[key]}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Table grid */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="text-4xl mb-4">🪑</div>
+          <p className="text-ra-text font-medium">
+            {filter === "all" ? "No tables yet" : `No ${filter} tables`}
+          </p>
+          <p className="text-sm text-ra-muted mt-1">
+            {filter === "all"
+              ? `Click "Add Table" to set up your floor plan.`
+              : "Change the filter to see other tables."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {filtered.map((table) => (
+            <TableCard
+              key={table.id}
+              table={table}
+              onSelect={setSelectedTable}
+              onDelete={setDeleteTarget}
+            />
+          ))}
+
+          {/* Add table ghost card */}
+          {filter === "all" && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className={cn(
+                "rounded-2xl border-2 border-dashed border-ra-border/40 p-5",
+                "flex flex-col items-center justify-center gap-2 min-h-[180px]",
+                "text-ra-muted/50 hover:text-ra-muted hover:border-ra-accent/40",
+                "hover:bg-white/2 transition-all duration-200 cursor-pointer"
+              )}
+            >
+              <Plus size={22} className="opacity-60" />
+              <span className="text-xs font-medium">Add Table</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Slide-over */}
+      {selectedTable && (
+        <TableSlideOver
+          table={selectedTable}
+          waiters={waiters}
+          onClose={() => setSelectedTable(null)}
+        />
+      )}
+
+      {/* Add modal */}
+      {showAddModal && (
+        <AddTableModal
+          waiters={waiters}
+          onClose={() => setShowAddModal(false)}
+        />
+      )}
+
+      {/* Delete modal */}
+      {deleteTarget && (
+        <DeleteTableModal
+          table={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+        />
+      )}
+    </div>
+  );
+}

@@ -41,13 +41,14 @@ export async function middleware(req: NextRequest) {
   }
 
   // ── / (root) ─────────────────────────────────────────────────────────────
-  // Redirect to dashboard or login based on role.
+  // Unauthenticated visitors see the public landing page.
+  // Authenticated users are redirected to their dashboard.
   if (pathname === "/") {
-    if (!isAuthenticated) return redirectTo("/auth/login", req);
+    if (!isAuthenticated) return NextResponse.next();
     if (role === "super_admin") return redirectTo("/super-admin", req);
     if (role === "restaurant_owner" || role === "restaurant_manager")
       return redirectTo("/admin", req);
-    return redirectTo("/auth/login", req);
+    return NextResponse.next();
   }
 
   // ── /super-admin/* ───────────────────────────────────────────────────────

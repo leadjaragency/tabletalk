@@ -93,7 +93,56 @@ interface ExtractedDish {
 }
 
 // ---------------------------------------------------------------------------
-// UploadMenuModal — step 1: pick file, send to /api/menu/parse
+// CSV helpers — client-side parser, no package needed
+// ---------------------------------------------------------------------------
+
+function splitCSVRow(row: string): string[] {
+  const result: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < row.length; i++) {
+    const ch = row[i];
+    if (ch === '"') {
+      if (inQuotes && row[i + 1] === '"') { cur += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === "," && !inQuotes) {
+      result.push(cur.trim()); cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function parseMenuCSV(text: string): ExtractedDish[] {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = splitCSVRow(lines[0]).map(h => h.toLowerCase().trim());
+  const get = (vals: string[], col: string) => vals[headers.indexOf(col)] ?? "";
+  return lines.slice(1)
+    .filter(l => l.trim())
+    .map(line => {
+      const v = splitCSVRow(line);
+      const allergenRaw = get(v, "allergens");
+      return {
+        name:        get(v, "name").slice(0, 100),
+        description: get(v, "description").slice(0, 500),
+        price:       Math.max(0, parseFloat(get(v, "price")) || 0),
+        category:    get(v, "category") || "General",
+        allergens:   allergenRaw ? allergenRaw.split(",").map(s => s.trim()).filter(Boolean) : [],
+        spiceLevel:  Math.min(5, Math.max(0, parseInt(get(v, "spice_level")) || 0)),
+        isVeg:       get(v, "is_veg") === "true",
+        isVegan:     get(v, "is_vegan") === "true",
+        isGlutenFree: get(v, "is_gluten_free") === "true",
+        prepTime:    Math.max(1, parseInt(get(v, "prep_time")) || 15),
+      };
+    })
+    .filter(d => d.name);
+}
+
+// ---------------------------------------------------------------------------
+// UploadMenuModal — tabbed: Paste Text (AI) | CSV Import (no AI)
 // ---------------------------------------------------------------------------
 
 function UploadMenuModal({
@@ -103,117 +152,172 @@ function UploadMenuModal({
   onClose:  () => void;
   onParsed: (dishes: ExtractedDish[]) => void;
 }) {
-  const [file,    setFile]    = useState<File | null>(null);
-  const [parsing, setParsing] = useState(false);
+  const [tab,     setTab]     = useState<"paste" | "csv">("paste");
+  const [text,    setText]    = useState("");
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [busy,    setBusy]    = useState(false);
   const [error,   setError]   = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
 
-  async function handleParse() {
-    if (!file) return;
-    if (file.size > 4 * 1024 * 1024) {
-      setError("File is too large (max 4 MB). Please reduce the PDF size or export a smaller section.");
-      return;
-    }
-    setParsing(true);
-    setError(null);
+  // ── Tab 1: Paste text → Claude ───────────────────────────────────────────
+  async function handlePasteAI() {
+    if (!text.trim()) { setError("Please paste some menu text first."); return; }
+    setBusy(true); setError(null);
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/menu/parse", { method: "POST", body: form });
+      const res = await fetch("/api/menu/parse", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ text }),
+      });
       const body = await res.json() as { dishes?: ExtractedDish[]; error?: string };
       if (!res.ok) throw new Error(body.error ?? "Parse failed");
-      if (!body.dishes?.length) throw new Error("No dishes found in this document.");
+      if (!body.dishes?.length) throw new Error("No dishes found. Try pasting more complete menu text.");
       onParsed(body.dishes);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred.");
     } finally {
-      setParsing(false);
+      setBusy(false);
     }
   }
 
-  function onDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setDragging(false);
-    const dropped = e.dataTransfer.files[0];
-    if (dropped) setFile(dropped);
+  // ── Tab 2: CSV upload → client-side parse ────────────────────────────────
+  async function handleCSV() {
+    if (!csvFile) { setError("Please select a CSV file first."); return; }
+    setBusy(true); setError(null);
+    try {
+      const rawText = await csvFile.text();
+      const dishes = parseMenuCSV(rawText);
+      if (!dishes.length) throw new Error("No dishes found. Make sure the CSV uses the template column headers.");
+      onParsed(dishes);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setBusy(false);
+    }
   }
+
+  const canSubmit = tab === "paste" ? text.trim().length > 0 : csvFile !== null;
+  const handleSubmit = tab === "paste" ? handlePasteAI : handleCSV;
 
   return (
     <Modal
       open
       onOpenChange={(o) => !o && onClose()}
-      title="Upload Menu"
-      description="Upload your menu as a PDF, Word document, or plain text. Claude will extract all dishes automatically."
+      title="Import Menu"
+      description="Choose how to import your menu items."
       contentClassName="bg-ra-surface border-ra-border text-ra-text"
-      size="sm"
+      size="md"
       footer={
         <div className="flex items-center justify-between w-full">
           <div className="text-xs text-red-400">{error ?? ""}</div>
           <div className="flex gap-3">
-            <Button variant="ghost" size="sm" onClick={onClose} disabled={parsing}>Cancel</Button>
-            <Button
-              variant="amber"
-              size="sm"
-              loading={parsing}
-              disabled={!file || parsing}
-              onClick={handleParse}
-            >
-              {parsing ? "Parsing…" : "Parse Menu"}
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={busy}>Cancel</Button>
+            <Button variant="amber" size="sm" loading={busy} disabled={!canSubmit || busy} onClick={handleSubmit}>
+              {busy
+                ? (tab === "paste" ? "Parsing…" : "Reading…")
+                : (tab === "paste" ? "Parse with AI" : "Import CSV")}
             </Button>
           </div>
         </div>
       }
     >
-      <div className="space-y-4">
-        {/* Drop zone */}
-        <label
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-all ${
-            dragging
-              ? "border-ra-accent bg-ra-accent/5"
-              : "border-ra-border hover:border-ra-accent/40 hover:bg-white/2"
-          }`}
-        >
-          <input
-            type="file"
-            accept=".pdf,.docx,.txt"
-            className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+      {/* Tabs */}
+      <div className="flex rounded-xl border border-ra-border overflow-hidden mb-5">
+        {(["paste", "csv"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => { setTab(t); setError(null); }}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              tab === t
+                ? "bg-ra-accent/15 text-ra-accent"
+                : "text-ra-muted hover:text-ra-text hover:bg-white/5"
+            }`}
+          >
+            {t === "paste" ? "✨ Paste Text (AI)" : "📊 CSV Import"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "paste" ? (
+        <div className="space-y-3">
+          <p className="text-xs text-ra-muted">
+            Copy your menu text from any source — a PDF viewer, website, email, or Word document —
+            and paste it below. Claude will extract all dishes automatically.
+          </p>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={"Starters\nGarlic Bread - $6.99\nSoup of the Day - $8.99\n\nMains\nGrilled Salmon - $24.99\n..."}
+            rows={10}
+            className="w-full rounded-xl border border-ra-border bg-ra-bg px-3 py-2.5 text-sm text-ra-text placeholder:text-ra-muted/40 focus:border-ra-accent/50 focus:outline-none focus:ring-1 focus:ring-ra-accent/30 resize-none font-mono"
           />
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-ra-accent/10">
-            <Upload className="h-5 w-5 text-ra-accent" />
-          </div>
-          {file ? (
-            <div className="text-center">
-              <div className="flex items-center gap-2 text-sm font-medium text-ra-text">
-                <FileText className="h-4 w-4 text-ra-accent" />
-                {file.name}
-              </div>
-              <p className={`mt-1 text-xs ${file.size > 4 * 1024 * 1024 ? "text-red-400" : "text-ra-muted"}`}>
-                {file.size > 1024 * 1024
-                  ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
-                  : `${(file.size / 1024).toFixed(1)} KB`}
-                {file.size > 4 * 1024 * 1024 && " — too large (max 4 MB)"}
-                {file.size <= 4 * 1024 * 1024 && " — click to change"}
-              </p>
-            </div>
-          ) : (
-            <div className="text-center">
-              <p className="text-sm font-medium text-ra-text">Drop your menu file here</p>
-              <p className="mt-1 text-xs text-ra-muted">or click to browse — PDF, DOCX, TXT</p>
+          {busy && (
+            <div className="flex items-center gap-2 text-xs text-ra-muted">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-ra-accent" />
+              Claude is reading your menu — this may take a few seconds…
             </div>
           )}
-        </label>
-
-        {parsing && (
-          <div className="flex items-center gap-2 text-xs text-ra-muted">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-ra-accent" />
-            Claude is reading your menu — this may take a few seconds…
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <p className="text-xs text-ra-muted leading-relaxed">
+              Download the template, fill it in Excel or Google Sheets, then upload it here.
+              No AI involved — instant and 100% reliable.
+            </p>
+            <a
+              href="/api/menu/csv-template"
+              download="tabletalk-menu-template.csv"
+              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-ra-accent/40 px-3 py-1.5 text-xs font-medium text-ra-accent hover:bg-ra-accent/10 transition-colors"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Download Template
+            </a>
           </div>
-        )}
-      </div>
+
+          {/* Column guide */}
+          <div className="rounded-xl border border-ra-border bg-ra-bg p-3 text-xs text-ra-muted space-y-1">
+            <p className="font-medium text-ra-text mb-1.5">CSV columns:</p>
+            {[
+              ["name", "Dish name (required)"],
+              ["description", "Short description"],
+              ["price", "Price as a number, e.g. 18.99 (required)"],
+              ["category", "Section name, e.g. Starters, Mains, Desserts (required)"],
+              ["allergens", "Comma-separated: Dairy,Nuts,Gluten,Shellfish,Soy,Eggs,Fish,Wheat,Sesame,Mustard"],
+              ["spice_level", "0–5 (0=not spicy, 5=extra hot)"],
+              ["is_veg / is_vegan / is_gluten_free", "true or false"],
+              ["prep_time", "Minutes, e.g. 15"],
+            ].map(([col, desc]) => (
+              <div key={col} className="flex gap-2">
+                <span className="font-mono text-ra-accent shrink-0">{col}</span>
+                <span>— {desc}</span>
+              </div>
+            ))}
+          </div>
+
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ra-border p-6 hover:border-ra-accent/40 transition-all">
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => { setCsvFile(e.target.files?.[0] ?? null); setError(null); }}
+            />
+            <Upload className="h-5 w-5 text-ra-accent" />
+            {csvFile ? (
+              <div className="text-center">
+                <p className="text-sm font-medium text-ra-text">{csvFile.name}</p>
+                <p className="text-xs text-ra-muted mt-0.5">
+                  {(csvFile.size / 1024).toFixed(1)} KB — click to change
+                </p>
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-sm font-medium text-ra-text">Click to choose CSV file</p>
+                <p className="text-xs text-ra-muted">or drag and drop</p>
+              </div>
+            )}
+          </label>
+        </div>
+      )}
     </Modal>
   );
 }

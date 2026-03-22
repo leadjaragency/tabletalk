@@ -23,7 +23,9 @@ export interface ExtractedDish {
 
 // ---------------------------------------------------------------------------
 // POST /api/menu/parse
-// Accepts multipart/form-data with a "file" field (.pdf, .docx, .txt)
+// Two modes:
+//   application/json  → { text: string }  — paste path (no file parsing)
+//   multipart/form-data → file field (.pdf, .docx, .txt) — file upload path
 // Returns { dishes: ExtractedDish[] }
 // ---------------------------------------------------------------------------
 
@@ -35,52 +37,58 @@ export async function POST(req: Request) {
     const { restaurantId } = session.user;
     if (!restaurantId) return NextResponse.json({ error: "No restaurant" }, { status: 403 });
 
-    // ── Parse multipart form ─────────────────────────────────────────────────
-    const form = await req.formData();
-    const file = form.get("file") as File | null;
-    if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
-
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    if (!["pdf", "docx", "txt"].includes(ext ?? "")) {
-      return NextResponse.json(
-        { error: "Unsupported file type. Please upload a PDF, DOCX, or TXT file." },
-        { status: 400 }
-      );
-    }
-
-    // ── Build Claude message content ─────────────────────────────────────────
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const allergenList = ALLERGENS.join(", ");
-
     type MessageContent = Anthropic.Messages.MessageParam["content"];
     let content: MessageContent;
 
-    if (ext === "pdf") {
-      // Claude natively supports PDF documents
-      const arrayBuf = await file.arrayBuffer();
-      const base64 = Buffer.from(arrayBuf).toString("base64");
-      content = [
-        {
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data: base64 },
-        } as Anthropic.Messages.DocumentBlockParam,
-        {
-          type: "text",
-          text: buildPrompt(allergenList),
-        },
-      ];
-    } else if (ext === "docx") {
-      // Use mammoth to extract plain text from DOCX
-      const mammoth = (await import("mammoth")).default;
-      const arrayBuf = await file.arrayBuffer();
-      const { value: text } = await mammoth.extractRawText({
-        buffer: Buffer.from(arrayBuf),
-      });
-      content = `${buildPrompt(allergenList)}\n\nMENU DOCUMENT:\n${text}`;
+    const contentType = req.headers.get("content-type") ?? "";
+
+    if (contentType.includes("application/json")) {
+      // ── Text paste path — simplest, most reliable ────────────────────────
+      const body = await req.json() as { text?: string };
+      if (!body.text?.trim()) {
+        return NextResponse.json({ error: "No text provided" }, { status: 400 });
+      }
+      content = `${buildPrompt(allergenList)}\n\nMENU TEXT:\n${body.text}`;
+
     } else {
-      // Plain text
-      const text = await file.text();
-      content = `${buildPrompt(allergenList)}\n\nMENU DOCUMENT:\n${text}`;
+      // ── File upload path ─────────────────────────────────────────────────
+      const form = await req.formData();
+      const file = form.get("file") as File | null;
+      if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+
+      if (file.size > 4 * 1024 * 1024) {
+        return NextResponse.json({ error: "File is too large (max 4 MB)." }, { status: 400 });
+      }
+
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (!["pdf", "docx", "txt"].includes(ext ?? "")) {
+        return NextResponse.json(
+          { error: "Unsupported file type. Please upload a PDF, DOCX, or TXT file." },
+          { status: 400 }
+        );
+      }
+
+      if (ext === "pdf") {
+        const arrayBuf = await file.arrayBuffer();
+        const base64 = Buffer.from(arrayBuf).toString("base64");
+        content = [
+          {
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: base64 },
+          } as Anthropic.Messages.DocumentBlockParam,
+          { type: "text", text: buildPrompt(allergenList) },
+        ];
+      } else if (ext === "docx") {
+        const mammoth = (await import("mammoth")).default;
+        const arrayBuf = await file.arrayBuffer();
+        const { value: text } = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuf) });
+        content = `${buildPrompt(allergenList)}\n\nMENU DOCUMENT:\n${text}`;
+      } else {
+        const text = await file.text();
+        content = `${buildPrompt(allergenList)}\n\nMENU DOCUMENT:\n${text}`;
+      }
     }
 
     // ── Call Claude ──────────────────────────────────────────────────────────

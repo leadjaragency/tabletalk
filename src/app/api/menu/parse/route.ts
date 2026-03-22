@@ -97,31 +97,19 @@ export async function POST(req: Request) {
       .join("");
 
     // ── Parse JSON from response ─────────────────────────────────────────────
-    // Claude sometimes wraps JSON in ```json ... ``` fences — check that first,
-    // then fall back to a bare array match.
-    const codeBlockMatch = rawText.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-    const bareMatch      = rawText.match(/\[[\s\S]*\]/);
-    const jsonStr        = codeBlockMatch?.[1] ?? bareMatch?.[0];
+    // Uses a balanced-bracket scanner so trailing text after the array never
+    // corrupts the extracted JSON (greedy regexes fail for this case).
+    const dishes = extractJsonArray(rawText);
 
-    if (!jsonStr) {
+    if (!dishes) {
       return NextResponse.json(
         { error: "Could not extract dish data from this document. Please try a clearer menu format." },
         { status: 422 }
       );
     }
 
-    let dishes: ExtractedDish[];
-    try {
-      dishes = JSON.parse(jsonStr);
-    } catch {
-      return NextResponse.json(
-        { error: "Claude returned invalid JSON. Please try again or use a simpler menu format." },
-        { status: 422 }
-      );
-    }
-
     // Sanitize: clamp numbers, filter allergens to known list
-    const sanitized = dishes.map((d) => ({
+    const sanitized = dishes.map((d: ExtractedDish) => ({
       name:        String(d.name ?? "").slice(0, 100),
       description: String(d.description ?? "").slice(0, 500),
       price:       Math.max(0, Number(d.price) || 0),
@@ -141,6 +129,46 @@ export async function POST(req: Request) {
     console.error("[menu/parse]", error);
     return NextResponse.json({ error: "Failed to parse menu" }, { status: 500 });
   }
+}
+
+// ---------------------------------------------------------------------------
+// extractJsonArray — robust JSON array extraction from Claude's raw output.
+// Handles: bare arrays, ```json fenced blocks, trailing text after the array.
+// ---------------------------------------------------------------------------
+
+function extractJsonArray(text: string): ExtractedDish[] | null {
+  // 1. Try ```json ... ``` code fence first
+  const fenceMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?])\s*```/);
+  if (fenceMatch?.[1]) {
+    try {
+      const result = JSON.parse(fenceMatch[1]);
+      if (Array.isArray(result)) return result as ExtractedDish[];
+    } catch { /* fall through */ }
+  }
+
+  // 2. Balanced-bracket scan — finds every top-level [...] in the response
+  //    and returns the first one that parses as a non-empty array.
+  let depth = 0;
+  let start = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "[") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (text[i] === "]") {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        const candidate = text.slice(start, i + 1);
+        try {
+          const result = JSON.parse(candidate);
+          if (Array.isArray(result) && result.length > 0) {
+            return result as ExtractedDish[];
+          }
+        } catch { /* keep scanning */ }
+        start = -1;
+      }
+    }
+  }
+  return null;
 }
 
 function buildPrompt(allergenList: string): string {

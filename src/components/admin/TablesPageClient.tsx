@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Plus, Users, QrCode, MessageSquare, ChevronRight, X,
-  Clock, Utensils, Trash2, UserCheck, RefreshCw,
+  Clock, Utensils, Trash2, UserCheck, RefreshCw, RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter } from "@/components/ui/Modal";
@@ -264,6 +264,83 @@ function DeleteTableModal({
 }
 
 // ---------------------------------------------------------------------------
+// Reset Table Confirmation Modal
+// ---------------------------------------------------------------------------
+
+function ResetTableModal({
+  table,
+  onClose,
+}: {
+  table:   Table;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [error,    setError]    = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+
+  async function handleReset() {
+    setResetting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/tables/${table.id}/reset`, { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? "Failed to reset table.");
+      }
+      onClose();
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+      setResetting(false);
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title={`Reset Table ${table.number}?`}
+      description="Use this when a table is stuck as occupied but the customers have left."
+      contentClassName="bg-ra-surface border-ra-border text-ra-text"
+      size="sm"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="text-xs text-red-400">{error ?? ""}</div>
+          <div className="flex gap-3">
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={resetting}>Cancel</Button>
+            <Button variant="amber" size="sm" loading={resetting} onClick={handleReset}
+              leftIcon={<RotateCcw size={13} />}>
+              Reset to Empty
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-sm text-ra-muted">
+          Table <span className="font-semibold text-ra-text">#{table.number}</span> is currently{" "}
+          <span className="font-semibold text-ra-text">{table.status}</span>. Resetting it will:
+        </p>
+        <ul className="space-y-1.5 text-sm text-ra-muted">
+          <li className="flex items-center gap-2">
+            <span className="text-ra-accent">·</span> Set status back to <span className="text-ra-text font-medium">Empty</span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="text-ra-accent">·</span> Close any open customer session
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="text-ra-accent">·</span> The AI waiter will be ready for new customers
+          </li>
+        </ul>
+        <p className="text-xs text-ra-muted/60 pt-1">
+          Existing orders and chat history are preserved.
+        </p>
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Table Slide-Over Panel
 // ---------------------------------------------------------------------------
 
@@ -271,10 +348,12 @@ function TableSlideOver({
   table,
   waiters,
   onClose,
+  onReset,
 }: {
   table:   Table;
   waiters: Waiter[];
   onClose: () => void;
+  onReset: () => void;
 }) {
   const router  = useRouter();
   const session = table.sessions[0] ?? null;
@@ -475,6 +554,18 @@ function TableSlideOver({
             Updated {formatTimeAgo(new Date(table.updatedAt))}
           </span>
           <div className="flex gap-2">
+            {table.status !== "empty" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-amber-400 hover:bg-amber-500/10 gap-1.5 text-xs"
+                onClick={onReset}
+                title="Reset stuck table to empty"
+              >
+                <RotateCcw size={13} />
+                Reset Table
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon-sm"
@@ -618,9 +709,10 @@ function TableCard({
 export function TablesPageClient({ tables, waiters, restaurantSlug }: TablesPageClientProps) {
   const router = useRouter();
 
-  const [filter,       setFilter]       = useState<TableStatus>("all");
+  const [filter,        setFilter]        = useState<TableStatus>("all");
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [deleteTarget,  setDeleteTarget]  = useState<Table | null>(null);
+  const [resetTarget,   setResetTarget]   = useState<Table | null>(null);
   const [showAddModal,  setShowAddModal]  = useState(false);
   const [refreshing,    setRefreshing]    = useState(false);
 
@@ -646,6 +738,14 @@ export function TablesPageClient({ tables, waiters, restaurantSlug }: TablesPage
       const t = selectedTable;
       setSelectedTable(null);
       setTimeout(() => setDeleteTarget(t), 150);
+    }
+  }, [selectedTable]);
+
+  const handleResetFromSlideOver = useCallback(() => {
+    if (selectedTable) {
+      const t = selectedTable;
+      setSelectedTable(null);
+      setTimeout(() => setResetTarget(t), 150);
     }
   }, [selectedTable]);
 
@@ -765,6 +865,7 @@ export function TablesPageClient({ tables, waiters, restaurantSlug }: TablesPage
           table={selectedTable}
           waiters={waiters}
           onClose={() => setSelectedTable(null)}
+          onReset={handleResetFromSlideOver}
         />
       )}
 
@@ -781,6 +882,14 @@ export function TablesPageClient({ tables, waiters, restaurantSlug }: TablesPage
         <DeleteTableModal
           table={deleteTarget}
           onClose={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {/* Reset modal */}
+      {resetTarget && (
+        <ResetTableModal
+          table={resetTarget}
+          onClose={() => setResetTarget(null)}
         />
       )}
     </div>

@@ -6,8 +6,9 @@
    ============================================================ */
 @theme {
   /* ── Fonts ─────────────────────────────────────────────── */
-  --font-display: var(--font-playfair), "Georgia", serif;
-  --font-sans: var(--font-dm-sans), "system-ui", sans-serif;
+  --font-display: var(--font-sora), "system-ui", sans-serif;
+  --font-sans: var(--font-nunito-sans), "system-ui", sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "Courier New", monospace;
 
   /* ── Super Admin palette (Dark Slate-Indigo) ────────────── */
   --color-sa-bg:      #0F172A;

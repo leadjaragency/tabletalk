@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   },
 
   // Packages that use native Node.js modules — must not be bundled by webpack
-  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg", "bcryptjs"],
+  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg", "bcryptjs", "mammoth"],
 
   // TypeScript type errors will still fail the build via tsc
   typescript: {

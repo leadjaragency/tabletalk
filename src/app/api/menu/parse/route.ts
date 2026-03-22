@@ -97,15 +97,28 @@ export async function POST(req: Request) {
       .join("");
 
     // ── Parse JSON from response ─────────────────────────────────────────────
-    const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
+    // Claude sometimes wraps JSON in ```json ... ``` fences — check that first,
+    // then fall back to a bare array match.
+    const codeBlockMatch = rawText.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+    const bareMatch      = rawText.match(/\[[\s\S]*\]/);
+    const jsonStr        = codeBlockMatch?.[1] ?? bareMatch?.[0];
+
+    if (!jsonStr) {
       return NextResponse.json(
         { error: "Could not extract dish data from this document. Please try a clearer menu format." },
         { status: 422 }
       );
     }
 
-    const dishes: ExtractedDish[] = JSON.parse(jsonMatch[0]);
+    let dishes: ExtractedDish[];
+    try {
+      dishes = JSON.parse(jsonStr);
+    } catch {
+      return NextResponse.json(
+        { error: "Claude returned invalid JSON. Please try again or use a simpler menu format." },
+        { status: 422 }
+      );
+    }
 
     // Sanitize: clamp numbers, filter allergens to known list
     const sanitized = dishes.map((d) => ({

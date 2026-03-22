@@ -110,6 +110,10 @@ function UploadMenuModal({
 
   async function handleParse() {
     if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      setError("File is too large (max 4 MB). Please reduce the PDF size or export a smaller section.");
+      return;
+    }
     setParsing(true);
     setError(null);
     try {
@@ -187,8 +191,12 @@ function UploadMenuModal({
                 <FileText className="h-4 w-4 text-ra-accent" />
                 {file.name}
               </div>
-              <p className="mt-1 text-xs text-ra-muted">
-                {(file.size / 1024).toFixed(1)} KB — click to change
+              <p className={`mt-1 text-xs ${file.size > 4 * 1024 * 1024 ? "text-red-400" : "text-ra-muted"}`}>
+                {file.size > 1024 * 1024
+                  ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
+                  : `${(file.size / 1024).toFixed(1)} KB`}
+                {file.size > 4 * 1024 * 1024 && " — too large (max 4 MB)"}
+                {file.size <= 4 * 1024 * 1024 && " — click to change"}
               </p>
             </div>
           ) : (

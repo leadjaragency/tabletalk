@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   LayoutDashboard,
   LayoutGrid,
@@ -20,6 +21,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  BarChart2,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -58,6 +60,7 @@ interface AdminSidebarProps {
   pendingOrdersCount: number;
   userRole: string;
   userName: string;
+  userEmail: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,7 +120,189 @@ function NavLink({
 }
 
 // ---------------------------------------------------------------------------
-// Sidebar inner content (shared between desktop + mobile drawer)
+// Restaurant logo/name with dropdown (Fix 1)
+// ---------------------------------------------------------------------------
+
+function RestaurantDropdown({
+  restaurantName,
+  collapsed,
+  onClose,
+}: {
+  restaurantName: string;
+  collapsed: boolean;
+  onClose?: () => void;
+}) {
+  return (
+    <DropdownMenu.Root>
+      <div className={`flex items-center border-b border-ra-border py-4 ${collapsed ? "justify-center px-3" : "gap-3 px-5"}`}>
+        <DropdownMenu.Trigger asChild>
+          <button
+            title="Restaurant options"
+            className="flex items-center gap-3 rounded-lg hover:opacity-80 transition-opacity focus:outline-none"
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ra-accent text-sm font-bold text-ra-bg">
+              {restaurantName.charAt(0)}
+            </div>
+            {!collapsed && (
+              <div className="min-w-0 text-left">
+                <p className="truncate text-sm font-semibold text-ra-text leading-tight">
+                  {restaurantName}
+                </p>
+                <p className="text-xs text-ra-muted leading-tight">Admin Portal</p>
+              </div>
+            )}
+          </button>
+        </DropdownMenu.Trigger>
+
+        {/* Mobile close button */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="ml-auto flex h-7 w-7 items-center justify-center rounded-lg text-ra-muted hover:bg-white/5 hover:text-ra-text"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          side="right"
+          align="start"
+          sideOffset={8}
+          className="z-[100] w-52 rounded-xl border border-ra-border bg-ra-surface shadow-2xl shadow-black/40 animate-in fade-in-0 zoom-in-95 duration-100"
+        >
+          <div className="px-3 py-2.5 border-b border-ra-border">
+            <p className="text-xs font-semibold text-ra-text truncate">{restaurantName}</p>
+            <p className="text-xs text-ra-muted">Restaurant Admin</p>
+          </div>
+
+          <div className="p-1.5 space-y-0.5">
+            <DropdownMenu.Item asChild>
+              <Link
+                href="/admin/settings"
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors outline-none cursor-pointer"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </Link>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item asChild>
+              <Link
+                href="/admin/analytics"
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors outline-none cursor-pointer"
+              >
+                <BarChart2 className="h-4 w-4" />
+                Analytics
+              </Link>
+            </DropdownMenu.Item>
+          </div>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// User profile footer with dropdown + visible sign-out (Fix 2)
+// ---------------------------------------------------------------------------
+
+function UserFooter({
+  userName,
+  userEmail,
+  userRole,
+  collapsed,
+}: {
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  collapsed: boolean;
+}) {
+  const roleLabel = userRole.replace("restaurant_", "");
+
+  if (collapsed) {
+    return (
+      <div className="border-t border-ra-border p-3 flex justify-center">
+        <button
+          onClick={() => signOut({ callbackUrl: "/auth/login" })}
+          title="Sign out"
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-ra-border p-3 space-y-2">
+      {/* Profile dropdown */}
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button className="flex w-full items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/5 transition-colors focus:outline-none group">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ra-accent/20 text-xs font-bold text-ra-accent">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="truncate text-xs font-medium text-ra-text">{userName}</p>
+              <p className="text-xs text-ra-muted capitalize">{roleLabel}</p>
+            </div>
+            <ChevronRight className="h-3.5 w-3.5 text-ra-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+        </DropdownMenu.Trigger>
+
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            side="right"
+            align="end"
+            sideOffset={8}
+            className="z-[100] w-56 rounded-xl border border-ra-border bg-ra-surface shadow-2xl shadow-black/40 animate-in fade-in-0 zoom-in-95 duration-100"
+          >
+            {/* User info header */}
+            <div className="px-3 py-3 border-b border-ra-border">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ra-accent/20 text-sm font-bold text-ra-accent">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-ra-text truncate">{userName}</p>
+                  <p className="text-xs text-ra-muted truncate">{userEmail}</p>
+                </div>
+              </div>
+              <span className="mt-2 inline-flex rounded-full bg-ra-accent/10 px-2 py-0.5 text-[11px] font-medium text-ra-accent capitalize">
+                {roleLabel}
+              </span>
+            </div>
+
+            <div className="p-1.5">
+              <DropdownMenu.Item asChild>
+                <Link
+                  href="/admin/settings"
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors outline-none cursor-pointer"
+                >
+                  <Settings className="h-4 w-4" />
+                  Account Settings
+                </Link>
+              </DropdownMenu.Item>
+            </div>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+
+      {/* Sign Out — clearly visible red button */}
+      <button
+        onClick={() => signOut({ callbackUrl: "/auth/login" })}
+        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+      >
+        <LogOut className="h-4 w-4" />
+        Sign Out
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar inner content (shared between desktop + mobile drawers)
 // ---------------------------------------------------------------------------
 
 function SidebarContent({
@@ -125,6 +310,7 @@ function SidebarContent({
   pendingOrdersCount,
   userRole,
   userName,
+  userEmail,
   collapsed,
   onClose,
 }: {
@@ -132,6 +318,7 @@ function SidebarContent({
   pendingOrdersCount: number;
   userRole: string;
   userName: string;
+  userEmail: string;
   collapsed: boolean;
   onClose?: () => void;
 }) {
@@ -148,29 +335,12 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Logo / Restaurant Name */}
-      <div className={`flex items-center border-b border-ra-border py-4 ${collapsed ? "justify-center px-3" : "gap-3 px-5"}`}>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ra-accent text-sm font-bold text-ra-bg">
-          {restaurantName.charAt(0)}
-        </div>
-        {!collapsed && (
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-ra-text leading-tight">
-              {restaurantName}
-            </p>
-            <p className="text-xs text-ra-muted leading-tight">Admin Portal</p>
-          </div>
-        )}
-        {/* Mobile close button */}
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="ml-auto flex h-7 w-7 items-center justify-center rounded-lg text-ra-muted hover:bg-white/5 hover:text-ra-text"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+      {/* Logo / Restaurant Name with dropdown */}
+      <RestaurantDropdown
+        restaurantName={restaurantName}
+        collapsed={collapsed}
+        onClose={onClose}
+      />
 
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
@@ -187,36 +357,12 @@ function SidebarContent({
       </nav>
 
       {/* Footer — user info + sign out */}
-      <div className={`border-t border-ra-border p-3 ${collapsed ? "flex justify-center" : ""}`}>
-        {collapsed ? (
-          <button
-            onClick={() => signOut({ callbackUrl: "/auth/login" })}
-            title="Sign out"
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        ) : (
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ra-accent/20 text-xs font-bold text-ra-accent">
-              {userName.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-ra-text">{userName}</p>
-              <p className="text-xs text-ra-muted capitalize">
-                {userRole.replace("restaurant_", "")}
-              </p>
-            </div>
-            <button
-              onClick={() => signOut({ callbackUrl: "/auth/login" })}
-              title="Sign out"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </div>
+      <UserFooter
+        userName={userName}
+        userEmail={userEmail}
+        userRole={userRole}
+        collapsed={collapsed}
+      />
     </div>
   );
 }
@@ -230,6 +376,7 @@ export function AdminSidebar({
   pendingOrdersCount,
   userRole,
   userName,
+  userEmail,
 }: AdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -263,6 +410,7 @@ export function AdminSidebar({
           pendingOrdersCount={pendingOrdersCount}
           userRole={userRole}
           userName={userName}
+          userEmail={userEmail}
           collapsed={false}
           onClose={() => setMobileOpen(false)}
         />
@@ -275,6 +423,7 @@ export function AdminSidebar({
           pendingOrdersCount={pendingOrdersCount}
           userRole={userRole}
           userName={userName}
+          userEmail={userEmail}
           collapsed={true}
         />
       </div>
@@ -286,6 +435,7 @@ export function AdminSidebar({
           pendingOrdersCount={pendingOrdersCount}
           userRole={userRole}
           userName={userName}
+          userEmail={userEmail}
           collapsed={false}
         />
       </div>

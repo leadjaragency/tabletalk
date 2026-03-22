@@ -92,7 +92,7 @@ function AddTableModal({
   const router = useRouter();
   const [number,   setNumber]   = useState("");
   const [seats,    setSeats]    = useState("4");
-  const [waiterId, setWaiterId] = useState<string | undefined>(undefined);
+  const [waiterId, setWaiterId] = useState<string>("none");
   const [error,    setError]    = useState<string | null>(null);
   const [saving,   setSaving]   = useState(false);
 
@@ -111,7 +111,7 @@ function AddTableModal({
         body:    JSON.stringify({
           number:   Number(number),
           seats:    Number(seats),
-          waiterId: waiterId ?? null,
+          waiterId: waiterId === "none" ? null : waiterId,
         }),
       });
       if (!res.ok) {
@@ -128,7 +128,7 @@ function AddTableModal({
   }
 
   const waiterOptions = [
-    { value: "", label: "No waiter assigned" },
+    { value: "none", label: "No waiter assigned" },
     ...waiters.map((w) => ({ value: w.id, label: `${w.avatar} ${w.name}` })),
   ];
 
@@ -192,8 +192,8 @@ function AddTableModal({
             Assign AI Waiter
           </label>
           <Select
-            value={waiterId ?? ""}
-            onValueChange={(v) => setWaiterId(v || undefined)}
+            value={waiterId}
+            onValueChange={(v) => setWaiterId(v || "none")}
             options={waiterOptions}
             placeholder="No waiter assigned"
           />
@@ -281,7 +281,7 @@ function TableSlideOver({
   const latestOrder = table.orders[0] ?? null;
 
   const [assigningWaiter, setAssigningWaiter] = useState(false);
-  const [selectedWaiter,  setSelectedWaiter]  = useState(table.waiter?.id ?? "");
+  const [selectedWaiter,  setSelectedWaiter]  = useState(table.waiter?.id ?? "none");
   const [waiterError,     setWaiterError]     = useState<string | null>(null);
 
   async function handleReassignWaiter() {
@@ -291,7 +291,7 @@ function TableSlideOver({
       const res = await fetch(`/api/tables/${table.id}`, {
         method:  "PUT",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ waiterId: selectedWaiter || null }),
+        body:    JSON.stringify({ waiterId: selectedWaiter === "none" ? null : selectedWaiter }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
@@ -306,7 +306,7 @@ function TableSlideOver({
   }
 
   const waiterOptions = [
-    { value: "", label: "No waiter" },
+    { value: "none", label: "No waiter" },
     ...waiters.map((w) => ({ value: w.id, label: `${w.avatar} ${w.name}` })),
   ];
 
@@ -435,7 +435,7 @@ function TableSlideOver({
                 size="sm"
                 className="w-full"
                 loading={assigningWaiter}
-                disabled={selectedWaiter === (table.waiter?.id ?? "")}
+                disabled={selectedWaiter === (table.waiter?.id ?? "none")}
                 onClick={handleReassignWaiter}
                 leftIcon={<UserCheck size={14} />}
               >

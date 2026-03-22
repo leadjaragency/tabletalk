@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { Bell, Wifi, WifiOff } from "lucide-react";
+import { NotificationBell } from "@/components/admin/NotificationBell";
+import { Wifi, WifiOff } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -15,7 +16,7 @@ export default async function AdminLayout({
 
   if (!session) redirect("/auth/login");
 
-  const { role, restaurantId, name: userName } = session.user;
+  const { role, restaurantId, name: userName, email: userEmail } = session.user;
 
   if (role !== "restaurant_owner" && role !== "restaurant_manager") {
     redirect("/auth/login");
@@ -46,6 +47,26 @@ export default async function AdminLayout({
 
   const pendingOrdersCount = restaurant._count.orders;
 
+  // ── Recent pending orders for notification bell ────────────────────────
+  const recentOrdersRaw = await prisma.order.findMany({
+    where: { restaurantId, status: { in: ["received", "preparing"] } },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+    select: {
+      id: true,
+      orderNumber: true,
+      status: true,
+      createdAt: true,
+      table: { select: { number: true } },
+      _count: { select: { items: true } },
+    },
+  });
+  // Serialize dates before passing to client components
+  const recentOrders = JSON.parse(JSON.stringify(recentOrdersRaw)) as Array<{
+    id: string; orderNumber: string; status: string; createdAt: string;
+    table: { number: number }; _count: { items: number };
+  }>;
+
   // ── POS status (mock — always connected for demo) ──────────────────────
   const posConnected = true;
 
@@ -57,6 +78,7 @@ export default async function AdminLayout({
         pendingOrdersCount={pendingOrdersCount}
         userRole={role}
         userName={userName ?? "User"}
+        userEmail={userEmail ?? ""}
       />
 
       {/* Main content — offset for sidebar at each breakpoint */}
@@ -93,16 +115,10 @@ export default async function AdminLayout({
             </div>
 
             {/* Notification bell */}
-            <div className="relative">
-              <button className="flex h-8 w-8 items-center justify-center rounded-xl text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors">
-                <Bell className="h-4 w-4" />
-              </button>
-              {pendingOrdersCount > 0 && (
-                <span className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-ra-accent text-[10px] font-bold text-ra-bg">
-                  {pendingOrdersCount > 9 ? "9+" : pendingOrdersCount}
-                </span>
-              )}
-            </div>
+            <NotificationBell
+              count={pendingOrdersCount}
+              recentOrders={recentOrders}
+            />
           </div>
         </header>
 

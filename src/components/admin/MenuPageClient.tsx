@@ -8,6 +8,7 @@ import { z } from "zod";
 import {
   Plus, Pencil, Trash2, AlertCircle,
   ChefHat, Flame, CheckCircle2, XCircle,
+  Upload, FileText, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
@@ -73,6 +74,335 @@ const DishFormSchema = z.object({
 });
 
 type DishFormValues = z.infer<typeof DishFormSchema>;
+
+// ---------------------------------------------------------------------------
+// Menu Upload — extracted dish type (mirrors /api/menu/parse response)
+// ---------------------------------------------------------------------------
+
+interface ExtractedDish {
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  allergens: string[];
+  spiceLevel: number;
+  isVeg: boolean;
+  isVegan: boolean;
+  isGlutenFree: boolean;
+  prepTime: number;
+}
+
+// ---------------------------------------------------------------------------
+// UploadMenuModal — step 1: pick file, send to /api/menu/parse
+// ---------------------------------------------------------------------------
+
+function UploadMenuModal({
+  onClose,
+  onParsed,
+}: {
+  onClose:  () => void;
+  onParsed: (dishes: ExtractedDish[]) => void;
+}) {
+  const [file,    setFile]    = useState<File | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  async function handleParse() {
+    if (!file) return;
+    setParsing(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/menu/parse", { method: "POST", body: form });
+      const body = await res.json() as { dishes?: ExtractedDish[]; error?: string };
+      if (!res.ok) throw new Error(body.error ?? "Parse failed");
+      if (!body.dishes?.length) throw new Error("No dishes found in this document.");
+      onParsed(body.dishes);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setParsing(false);
+    }
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) setFile(dropped);
+  }
+
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title="Upload Menu"
+      description="Upload your menu as a PDF, Word document, or plain text. Claude will extract all dishes automatically."
+      contentClassName="bg-ra-surface border-ra-border text-ra-text"
+      size="sm"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="text-xs text-red-400">{error ?? ""}</div>
+          <div className="flex gap-3">
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={parsing}>Cancel</Button>
+            <Button
+              variant="amber"
+              size="sm"
+              loading={parsing}
+              disabled={!file || parsing}
+              onClick={handleParse}
+            >
+              {parsing ? "Parsing…" : "Parse Menu"}
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {/* Drop zone */}
+        <label
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-all ${
+            dragging
+              ? "border-ra-accent bg-ra-accent/5"
+              : "border-ra-border hover:border-ra-accent/40 hover:bg-white/2"
+          }`}
+        >
+          <input
+            type="file"
+            accept=".pdf,.docx,.txt"
+            className="hidden"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-ra-accent/10">
+            <Upload className="h-5 w-5 text-ra-accent" />
+          </div>
+          {file ? (
+            <div className="text-center">
+              <div className="flex items-center gap-2 text-sm font-medium text-ra-text">
+                <FileText className="h-4 w-4 text-ra-accent" />
+                {file.name}
+              </div>
+              <p className="mt-1 text-xs text-ra-muted">
+                {(file.size / 1024).toFixed(1)} KB — click to change
+              </p>
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-sm font-medium text-ra-text">Drop your menu file here</p>
+              <p className="mt-1 text-xs text-ra-muted">or click to browse — PDF, DOCX, TXT</p>
+            </div>
+          )}
+        </label>
+
+        {parsing && (
+          <div className="flex items-center gap-2 text-xs text-ra-muted">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-ra-accent" />
+            Claude is reading your menu — this may take a few seconds…
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ParsePreviewModal — step 2: review extracted dishes, map categories, import
+// ---------------------------------------------------------------------------
+
+function ParsePreviewModal({
+  extracted,
+  categories,
+  onClose,
+}: {
+  extracted:  ExtractedDish[];
+  categories: Category[];
+  onClose:    () => void;
+}) {
+  const router = useRouter();
+
+  // Each extracted dish gets a selected flag + a mapped categoryId
+  const [rows, setRows] = useState(() =>
+    extracted.map((d) => {
+      // Auto-match category name (case-insensitive) to existing categories
+      const matched = categories.find(
+        (c) => c.name.toLowerCase() === d.category.toLowerCase()
+      );
+      return {
+        ...d,
+        selected:   true,
+        categoryId: matched?.id ?? (categories[0]?.id ?? ""),
+      };
+    })
+  );
+  const [importing, setImporting] = useState(false);
+  const [progress,  setProgress]  = useState<{ done: number; total: number } | null>(null);
+  const [error,     setError]     = useState<string | null>(null);
+
+  function toggleRow(i: number) {
+    setRows((prev) => prev.map((r, idx) => idx === i ? { ...r, selected: !r.selected } : r));
+  }
+
+  function setCategoryId(i: number, catId: string) {
+    setRows((prev) => prev.map((r, idx) => idx === i ? { ...r, categoryId: catId } : r));
+  }
+
+  async function handleImport() {
+    const selected = rows.filter((r) => r.selected && r.categoryId);
+    if (!selected.length) return;
+    setImporting(true);
+    setError(null);
+    setProgress({ done: 0, total: selected.length });
+
+    let done = 0;
+    for (const row of selected) {
+      try {
+        await fetch("/api/menu", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            name:        row.name,
+            description: row.description,
+            price:       row.price,
+            categoryId:  row.categoryId,
+            allergens:   row.allergens,
+            spiceLevel:  row.spiceLevel,
+            isVeg:       row.isVeg,
+            isVegan:     row.isVegan,
+            isGlutenFree: row.isGlutenFree,
+            isJain:      false,
+            prepTime:    row.prepTime,
+            isChefPick:  false,
+            isPopular:   false,
+            isAvailable: true,
+            upsellIds:   [],
+          }),
+        });
+      } catch {
+        // continue on individual errors
+      }
+      done++;
+      setProgress({ done, total: selected.length });
+    }
+
+    router.refresh();
+    onClose();
+  }
+
+  const selectedCount = rows.filter((r) => r.selected).length;
+
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title={`Review Extracted Dishes (${extracted.length} found)`}
+      description="Select which dishes to import and confirm their categories."
+      contentClassName="bg-ra-surface border-ra-border text-ra-text"
+      size="lg"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="text-xs text-ra-muted">
+            {progress
+              ? `Importing ${progress.done} / ${progress.total}…`
+              : `${selectedCount} of ${rows.length} selected`}
+            {error && <span className="ml-2 text-red-400">{error}</span>}
+          </div>
+          <div className="flex gap-3">
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={importing}>Cancel</Button>
+            <Button
+              variant="amber"
+              size="sm"
+              loading={importing}
+              disabled={selectedCount === 0 || importing}
+              onClick={handleImport}
+            >
+              Import {selectedCount} Dish{selectedCount !== 1 ? "es" : ""}
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <div className="overflow-auto max-h-[60vh]">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 bg-ra-surface">
+            <tr className="border-b border-ra-border text-xs font-medium uppercase tracking-wider text-ra-muted">
+              <th className="px-2 py-2 w-8">
+                <input
+                  type="checkbox"
+                  checked={rows.every((r) => r.selected)}
+                  onChange={(e) =>
+                    setRows((prev) => prev.map((r) => ({ ...r, selected: e.target.checked })))
+                  }
+                  className="accent-ra-accent"
+                />
+              </th>
+              <th className="px-3 py-2 text-left">Dish</th>
+              <th className="px-3 py-2 text-left">Category</th>
+              <th className="px-3 py-2 text-right">Price</th>
+              <th className="px-3 py-2 text-center">Dietary</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr
+                key={i}
+                className={`border-b border-ra-border/50 transition-colors ${
+                  row.selected ? "" : "opacity-40"
+                }`}
+              >
+                <td className="px-2 py-2.5 text-center">
+                  <input
+                    type="checkbox"
+                    checked={row.selected}
+                    onChange={() => toggleRow(i)}
+                    className="accent-ra-accent"
+                  />
+                </td>
+                <td className="px-3 py-2.5">
+                  <p className="font-medium text-ra-text">{row.name}</p>
+                  <p className="text-xs text-ra-muted mt-0.5 line-clamp-1">{row.description}</p>
+                  {row.allergens.length > 0 && (
+                    <p className="text-[10px] text-amber-400 mt-0.5">
+                      ⚠ {row.allergens.join(", ")}
+                    </p>
+                  )}
+                </td>
+                <td className="px-3 py-2.5">
+                  <select
+                    value={row.categoryId}
+                    onChange={(e) => setCategoryId(i, e.target.value)}
+                    className="w-full rounded-lg border border-ra-border bg-ra-bg px-2 py-1 text-xs text-ra-text focus:border-ra-accent/50 focus:outline-none"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  {row.category && (
+                    <p className="mt-0.5 text-[10px] text-ra-muted truncate">
+                      from menu: {row.category}
+                    </p>
+                  )}
+                </td>
+                <td className="px-3 py-2.5 text-right font-mono text-ra-text">
+                  ${row.price.toFixed(2)}
+                </td>
+                <td className="px-3 py-2.5 text-center text-xs text-ra-muted space-x-1">
+                  {row.isVeg    && <span title="Vegetarian">🌱</span>}
+                  {row.isVegan  && <span title="Vegan">🌿</span>}
+                  {row.isGlutenFree && <span title="Gluten-free">🌾</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Modal>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -778,6 +1108,8 @@ export function MenuPageClient({ categories, dishes }: MenuPageClientProps) {
   const [dishModal,      setDishModal]      = useState<null | "add" | Dish>(null);
   const [deleteTarget,   setDeleteTarget]   = useState<Dish | null>(null);
   const [addCatOpen,     setAddCatOpen]     = useState(false);
+  const [uploadOpen,     setUploadOpen]     = useState(false);
+  const [parsedDishes,   setParsedDishes]   = useState<ExtractedDish[] | null>(null);
 
   const filteredDishes =
     activeCategory === "all"
@@ -797,13 +1129,22 @@ export function MenuPageClient({ categories, dishes }: MenuPageClientProps) {
             {dishes.length} dishes across {categories.length} categories
           </p>
         </div>
-        <Button
-          variant="amber"
-          leftIcon={<Plus className="h-4 w-4" />}
-          onClick={() => setDishModal("add")}
-        >
-          Add Dish
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            leftIcon={<Upload className="h-4 w-4" />}
+            onClick={() => setUploadOpen(true)}
+          >
+            Upload Menu
+          </Button>
+          <Button
+            variant="amber"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => setDishModal("add")}
+          >
+            Add Dish
+          </Button>
+        </div>
       </div>
 
       {/* ── Category tabs ────────────────────────────────────────────── */}
@@ -905,6 +1246,22 @@ export function MenuPageClient({ categories, dishes }: MenuPageClientProps) {
       )}
       {addCatOpen && (
         <AddCategoryModal onClose={() => setAddCatOpen(false)} />
+      )}
+      {uploadOpen && (
+        <UploadMenuModal
+          onClose={() => setUploadOpen(false)}
+          onParsed={(dishes) => {
+            setUploadOpen(false);
+            setParsedDishes(dishes);
+          }}
+        />
+      )}
+      {parsedDishes && (
+        <ParsePreviewModal
+          extracted={parsedDishes}
+          categories={categories}
+          onClose={() => setParsedDishes(null)}
+        />
       )}
     </div>
   );

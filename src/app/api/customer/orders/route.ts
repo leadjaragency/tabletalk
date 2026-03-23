@@ -17,7 +17,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "sessionId and restaurant required." }, { status: 400 });
     }
 
-    const restaurant = await prisma.restaurant.findUnique({
+    const restaurant = await prisma.restaurant.findFirst({
       where:  { slug: restaurantSlug, status: "active" },
       select: { id: true, taxRate: true },
     });

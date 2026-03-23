@@ -71,7 +71,7 @@ export default function OrderPage() {
   const [cardLoading,     setCardLoading]     = useState(false);
 
   useEffect(() => {
-    if (!sessionId || !restaurantSlug) return;
+    if (!sessionId || !restaurantSlug) { setLoading(false); return; }
     fetch(`/api/customer/orders?sessionId=${sessionId}&restaurant=${restaurantSlug}`)
       .then((r) => r.json())
       .then((d: { orders?: Order[]; session?: { discount: number | null }; taxRate?: number }) => {

@@ -15,7 +15,7 @@ async function resolveRestaurantId(req: Request): Promise<string | null> {
   const slug = searchParams.get("restaurantSlug");
 
   if (slug) {
-    const restaurant = await prisma.restaurant.findUnique({
+    const restaurant = await prisma.restaurant.findFirst({
       where: { slug, status: "active" },
       select: { id: true },
     });

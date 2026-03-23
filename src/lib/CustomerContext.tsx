@@ -82,11 +82,21 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const [restaurant, setRestaurant] = useState<CustomerRestaurant | null>(null);
   const [table,      setTable]      = useState<CustomerTable | null>(null);
   const [waiter,     setWaiter]     = useState<CustomerWaiter | null>(null);
-  const [sessionId,  setSessionId]  = useState<string | null>(null);
+  const sessionKey = restaurantSlug && !isNaN(tableNumber)
+    ? `tt-session-${restaurantSlug}-${tableNumber}`
+    : null;
+
+  const [sessionId,  setSessionIdState]  = useState<string | null>(() => {
+    if (typeof window === "undefined" || !sessionKey) return null;
+    return localStorage.getItem(sessionKey);
+  });
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
 
-  const storeSessionId = useCallback((id: string) => setSessionId(id), []);
+  const storeSessionId = useCallback((id: string) => {
+    setSessionIdState(id);
+    if (sessionKey) localStorage.setItem(sessionKey, id);
+  }, [sessionKey]);
 
   useEffect(() => {
     if (!restaurantSlug) {

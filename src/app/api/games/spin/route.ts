@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const { sessionId, restaurantSlug } = parsed.data;
 
     // Resolve restaurant + game settings from branding JSON
-    const restaurant = await prisma.restaurant.findUnique({
+    const restaurant = await prisma.restaurant.findFirst({
       where:  { slug: restaurantSlug, status: "active" },
       select: { id: true, branding: true },
     });

@@ -491,7 +491,7 @@ export default function GamesPage() {
   const [checking,     setChecking]     = useState(true);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId) { setChecking(false); return; }
     fetch(`/api/sessions?sessionId=${sessionId}`)
       .then((r) => r.json())
       .then((d: { hasOrders?: boolean; gamePlayUsed?: boolean; discount?: number | null }) => {

@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { Receipt, ChevronDown, ChevronUp, Loader2, CheckCircle2, Users } from "lucide-react";
+import {
+  ClipboardList, ChevronDown, ChevronUp, Loader2,
+  CheckCircle2, Users, CreditCard, Smartphone,
+} from "lucide-react";
 import { useCustomer } from "@/lib/CustomerContext";
 import { formatCurrency, cn } from "@/lib/utils";
 
@@ -40,15 +43,15 @@ const TIP_PRESETS = [
 ];
 
 // ---------------------------------------------------------------------------
-// Bill page
+// Order page (formerly Bill)
 // ---------------------------------------------------------------------------
 
-export default function BillPage() {
+export default function OrderPage() {
   const params         = useParams<{ tableId: string }>();
   const searchParams   = useSearchParams();
   const router         = useRouter();
   const restaurantSlug = searchParams.get("restaurant") ?? "";
-  const { sessionId, restaurant }  = useCustomer();
+  const { sessionId, restaurant } = useCustomer();
 
   const [orders,      setOrders]      = useState<Order[]>([]);
   const [sessionDisc, setSessionDisc] = useState<number | null>(null);
@@ -59,8 +62,13 @@ export default function BillPage() {
   const [showCustom,  setShowCustom]  = useState(false);
   const [splitBy,     setSplitBy]     = useState(1);
   const [showSplit,   setShowSplit]   = useState(false);
-  const [paying,      setPaying]      = useState(false);
-  const [paid,        setPaid]        = useState(false);
+
+  // Payment state
+  const [payMode,         setPayMode]         = useState<"online" | "card" | null>(null);
+  const [paying,          setPaying]          = useState(false);
+  const [paid,            setPaid]            = useState(false);
+  const [cardRequested,   setCardRequested]   = useState(false);
+  const [cardLoading,     setCardLoading]     = useState(false);
 
   useEffect(() => {
     if (!sessionId || !restaurantSlug) return;
@@ -75,7 +83,7 @@ export default function BillPage() {
       .catch(() => setLoading(false));
   }, [sessionId, restaurantSlug]);
 
-  // ── Calculations ──────────────────────────────────────────────────────────
+  // ── Calculations ─────────────────────────────────────────────────────────
   const subtotal     = orders.reduce((s, o) => s + o.subtotal, 0);
   const tax          = Math.round(subtotal * taxRate * 100) / 100;
   const gameDiscount = sessionDisc ? Math.round(subtotal * sessionDisc * 100) / 100 : 0;
@@ -84,20 +92,39 @@ export default function BillPage() {
   const grandTotal   = afterDisc + effectiveTip;
   const perPerson    = splitBy > 1 ? grandTotal / splitBy : null;
 
-  // ── Pay handler (simulated) ───────────────────────────────────────────────
-  const handlePay = useCallback(async () => {
+  // ── Pay Online handler ────────────────────────────────────────────────────
+  const handlePayOnline = useCallback(async () => {
     if (paying || paid) return;
+    setPayMode("online");
     setPaying(true);
-    // Simulate payment processing
     await new Promise((r) => setTimeout(r, 1800));
     setPaying(false);
     setPaid(true);
-    // Redirect to review after 1s
     setTimeout(() => {
       router.push(`/table/${params.tableId}/review?restaurant=${encodeURIComponent(restaurantSlug)}`);
     }, 1200);
   }, [paying, paid, params.tableId, restaurantSlug, router]);
 
+  // ── Call for Card Machine handler ─────────────────────────────────────────
+  const handleCardMachine = useCallback(async () => {
+    if (cardLoading || cardRequested) return;
+    setPayMode("card");
+    setCardLoading(true);
+    try {
+      await fetch("/api/customer/request-payment", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ sessionId, restaurantSlug }),
+      });
+    } catch {
+      // Non-fatal — show success regardless
+    } finally {
+      setCardLoading(false);
+      setCardRequested(true);
+    }
+  }, [cardLoading, cardRequested, sessionId, restaurantSlug]);
+
+  // ── States ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-cu-bg">
@@ -118,21 +145,41 @@ export default function BillPage() {
     );
   }
 
+  if (cardRequested) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-cu-bg px-6 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-cu-accent/10">
+          <CreditCard className="h-10 w-10 text-cu-accent" />
+        </div>
+        <p className="font-display text-2xl font-bold text-cu-text">Representative Notified!</p>
+        <p className="text-cu-text/60 text-sm leading-relaxed">
+          A member of our team is on their way to your table with the card machine.
+        </p>
+        <button
+          onClick={() => setCardRequested(false)}
+          className="mt-2 rounded-2xl border border-cu-border px-6 py-2.5 text-sm font-medium text-cu-text/60"
+        >
+          Back to Order
+        </button>
+      </div>
+    );
+  }
+
   if (orders.length === 0) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-cu-bg px-6 text-center">
-        <Receipt className="h-12 w-12 text-cu-accent/30" />
+        <ClipboardList className="h-12 w-12 text-cu-accent/30" />
         <p className="font-display text-xl font-semibold text-cu-text">No orders yet</p>
-        <p className="text-sm text-cu-text/50">Your bill will appear here once you place an order.</p>
+        <p className="text-sm text-cu-text/50">Your order details will appear here once you place an order.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-dvh bg-cu-bg pb-32">
+    <div className="min-h-dvh bg-cu-bg pb-44">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-cu-border bg-white/95 px-4 py-3 backdrop-blur-sm">
-        <h1 className="font-display text-lg font-bold text-cu-text text-center">Your Bill</h1>
+        <h1 className="font-display text-lg font-bold text-cu-text text-center">Your Order</h1>
         {restaurant && (
           <p className="text-center text-xs text-cu-text/40 mt-0.5">{restaurant.name}</p>
         )}
@@ -146,10 +193,10 @@ export default function BillPage() {
               <span className="text-xs font-medium text-cu-text/60">Order #{order.orderNumber}</span>
               <span className={cn(
                 "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
-                order.status === "served"   && "bg-cu-green/10 text-cu-green",
-                order.status === "ready"    && "bg-cu-accent/10 text-cu-accent",
-                order.status === "preparing"&& "bg-amber-100 text-amber-700",
-                order.status === "received" && "bg-cu-border text-cu-muted",
+                order.status === "served"    && "bg-cu-green/10 text-cu-green",
+                order.status === "ready"     && "bg-cu-accent/10 text-cu-accent",
+                order.status === "preparing" && "bg-amber-100 text-amber-700",
+                order.status === "received"  && "bg-cu-border text-cu-muted",
               )}>
                 {order.status}
               </span>
@@ -192,7 +239,7 @@ export default function BillPage() {
             {gameDiscount > 0 && (
               <div className="flex justify-between py-3 text-sm">
                 <span className="text-cu-green font-medium">
-                  🎰 Discount ({((sessionDisc ?? 0) * 100).toFixed(0)}%)
+                  🎰 Game Discount ({((sessionDisc ?? 0) * 100).toFixed(0)}%)
                 </span>
                 <span className="text-cu-green font-medium">-{formatCurrency(gameDiscount)}</span>
               </div>
@@ -202,8 +249,6 @@ export default function BillPage() {
               <span className="text-cu-text">{formatCurrency(effectiveTip)}</span>
             </div>
           </div>
-
-          {/* Grand total */}
           <div className="flex items-center justify-between bg-cu-accent/5 px-4 py-4">
             <span className="font-bold text-cu-text text-base">Total</span>
             <span className="font-display text-2xl font-bold text-cu-accent">
@@ -266,7 +311,6 @@ export default function BillPage() {
             </div>
             {showSplit ? <ChevronUp className="h-4 w-4 text-cu-text/40" /> : <ChevronDown className="h-4 w-4 text-cu-text/40" />}
           </button>
-
           {showSplit && (
             <div className="border-t border-cu-border px-4 py-3 space-y-3">
               <div className="flex items-center gap-3">
@@ -284,19 +328,37 @@ export default function BillPage() {
         </div>
       </div>
 
-      {/* Pay button — fixed bottom */}
-      <div className="fixed bottom-16 left-0 right-0 z-30 bg-gradient-to-t from-cu-bg via-cu-bg/90 to-transparent px-4 pb-2 pt-4">
-        <div className="mx-auto max-w-md">
+      {/* Payment buttons — fixed bottom */}
+      <div className="fixed bottom-16 left-0 right-0 z-30 bg-gradient-to-t from-cu-bg via-cu-bg/95 to-transparent px-4 pb-3 pt-5">
+        <div className="mx-auto max-w-md space-y-2.5">
+          {/* Pay Online */}
           <button
-            onClick={handlePay}
+            onClick={handlePayOnline}
             disabled={paying}
-            className="w-full rounded-2xl bg-cu-accent py-4 text-base font-bold text-white shadow-lg active:scale-[0.98] transition-transform disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-cu-accent py-4 text-base font-bold text-white shadow-lg active:scale-[0.98] transition-transform disabled:opacity-60"
           >
-            {paying
-              ? <span className="flex items-center justify-center gap-2"><Loader2 className="h-5 w-5 animate-spin" />Processing…</span>
-              : `Pay ${formatCurrency(grandTotal)}`
-            }
+            {paying && payMode === "online" ? (
+              <><Loader2 className="h-5 w-5 animate-spin" />Processing…</>
+            ) : (
+              <><Smartphone className="h-5 w-5" />Pay Online</>
+            )}
           </button>
+
+          {/* Call for Card Machine */}
+          <button
+            onClick={handleCardMachine}
+            disabled={cardLoading}
+            className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-cu-accent bg-white py-3.5 text-base font-bold text-cu-accent active:scale-[0.98] transition-transform disabled:opacity-60"
+          >
+            {cardLoading ? (
+              <><Loader2 className="h-5 w-5 animate-spin" />Notifying…</>
+            ) : (
+              <><CreditCard className="h-5 w-5" />Call for Card Machine</>
+            )}
+          </button>
+          <p className="text-center text-[11px] text-cu-text/40">
+            Card machine option brings a representative to your table
+          </p>
         </div>
       </div>
     </div>

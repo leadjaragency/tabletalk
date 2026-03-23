@@ -1,30 +1,21 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/app/api/restaurant/game-settings/route";
 
 export const dynamic = "force-dynamic";
 
-// ── Wheel segments (must match client-side WHEEL_SEGMENTS order) ──────────────
-const SEGMENTS = [
-  { label: "5% OFF",           discountPct: 0.05, won: true  },
-  { label: "10% OFF",          discountPct: 0.10, won: true  },
-  { label: "15% OFF",          discountPct: 0.15, won: true  },
-  { label: "Free Dessert",     discountPct: 0,    won: true  },
-  { label: "Free Drink",       discountPct: 0,    won: true  },
-  { label: "Better Luck Next Time", discountPct: 0, won: false },
-] as const;
-
-// Weighted probabilities (must sum to 1)
-const WEIGHTS = [0.20, 0.15, 0.10, 0.15, 0.15, 0.25];
+// Weighted probabilities (index matches SEGMENTS — must match client WHEEL_SEGMENTS order)
+const BASE_WEIGHTS = [0.20, 0.15, 0.10, 0.15, 0.15, 0.25];
 
 function weightedRandom(): number {
   const r = Math.random();
   let cumulative = 0;
-  for (let i = 0; i < WEIGHTS.length; i++) {
-    cumulative += WEIGHTS[i];
+  for (let i = 0; i < BASE_WEIGHTS.length; i++) {
+    cumulative += BASE_WEIGHTS[i];
     if (r < cumulative) return i;
   }
-  return WEIGHTS.length - 1;
+  return BASE_WEIGHTS.length - 1;
 }
 
 const Schema = z.object({
@@ -41,24 +32,33 @@ export async function POST(req: Request) {
     }
     const { sessionId, restaurantSlug } = parsed.data;
 
-    // Resolve restaurant
+    // Resolve restaurant + game settings from branding JSON
     const restaurant = await prisma.restaurant.findUnique({
       where:  { slug: restaurantSlug, status: "active" },
-      select: { id: true },
+      select: { id: true, branding: true },
     });
     if (!restaurant) {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
     }
 
+    // Merge DB settings with defaults
+    const branding     = (restaurant.branding ?? {}) as Record<string, unknown>;
+    const gs           = ({ ...DEFAULT_GAME_SETTINGS, ...(branding.gameSettings ?? {}) }) as GameSettings;
+
+    // Build segments dynamically from configured discount tiers
+    const SEGMENTS = [
+      { label: `${gs.spinTier1}% OFF`,       discountPct: gs.spinTier1 / 100,  won: true  },
+      { label: `${gs.spinTier2}% OFF`,        discountPct: gs.spinTier2 / 100,  won: true  },
+      { label: `${gs.spinTier3}% OFF`,        discountPct: gs.spinTier3 / 100,  won: true  },
+      { label: "Free Dessert",                discountPct: 0,                    won: true  },
+      { label: "Free Drink",                  discountPct: 0,                    won: true  },
+      { label: "Better Luck Next Time",       discountPct: 0,                    won: false },
+    ] as const;
+
     // Load session
     const session = await prisma.tableSession.findUnique({
       where:  { id: sessionId },
-      select: {
-        id:           true,
-        restaurantId: true,
-        gamePlayUsed: true,
-        orders:       { select: { id: true }, take: 1 },
-      },
+      select: { id: true, restaurantId: true, gamePlayUsed: true, orders: { select: { id: true }, take: 1 } },
     });
     if (!session || session.restaurantId !== restaurant.id) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });
@@ -90,7 +90,6 @@ export async function POST(req: Request) {
         where: { id: sessionId },
         data:  {
           gamePlayUsed: true,
-          // Only set discount if this spin won a percentage off
           ...(segment.discountPct > 0 ? { discount: segment.discountPct } : {}),
         },
       }),

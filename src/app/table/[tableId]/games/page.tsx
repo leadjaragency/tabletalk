@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { Lock, RotateCcw, Trophy, Calculator } from "lucide-react";
+import { Lock, RotateCcw, Trophy, Shuffle } from "lucide-react";
 import { useCustomer } from "@/lib/CustomerContext";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { TriviaQuestion } from "@/lib/constants";
 
 // ---------------------------------------------------------------------------
@@ -12,26 +12,23 @@ import type { TriviaQuestion } from "@/lib/constants";
 // ---------------------------------------------------------------------------
 
 const WHEEL_SEGMENTS = [
-  { label: "5% OFF",    line1: "5%",     line2: "OFF",     color: "#F59E0B", textColor: "#fff" },
-  { label: "10% OFF",   line1: "10%",    line2: "OFF",     color: "#EF4444", textColor: "#fff" },
-  { label: "15% OFF",   line1: "15%",    line2: "OFF",     color: "#10B981", textColor: "#fff" },
-  { label: "Free Dessert", line1: "Free",line2: "Dessert", color: "#8B5CF6", textColor: "#fff" },
-  { label: "Free Drink",line1: "Free",   line2: "Drink",   color: "#3B82F6", textColor: "#fff" },
-  { label: "Better Luck", line1: "Better", line2: "Luck",  color: "#6B7280", textColor: "#fff" },
+  { label: "5% OFF",       line1: "5%",     line2: "OFF",     color: "#F59E0B", textColor: "#fff" },
+  { label: "10% OFF",      line1: "10%",    line2: "OFF",     color: "#EF4444", textColor: "#fff" },
+  { label: "15% OFF",      line1: "15%",    line2: "OFF",     color: "#10B981", textColor: "#fff" },
+  { label: "Free Dessert", line1: "Free",   line2: "Dessert", color: "#8B5CF6", textColor: "#fff" },
+  { label: "Free Drink",   line1: "Free",   line2: "Drink",   color: "#3B82F6", textColor: "#fff" },
+  { label: "Better Luck",  line1: "Better", line2: "Luck",    color: "#6B7280", textColor: "#fff" },
 ];
 
-// SVG helpers
 const CX = 150, CY = 150, R = 130, LABEL_R = R * 0.63;
-const SEG_DEG = 360 / WHEEL_SEGMENTS.length; // 60°
+const SEG_DEG = 360 / WHEEL_SEGMENTS.length;
 
 function toRad(deg: number) { return (deg * Math.PI) / 180; }
 function polarPt(angle: number, r = R) {
   return { x: CX + r * Math.cos(toRad(angle)), y: CY + r * Math.sin(toRad(angle)) };
 }
-
-// Segment i is centered at (i * 60 - 90)° in SVG coords (top = -90°)
 function segPath(i: number) {
-  const start = i * SEG_DEG - 90 - SEG_DEG / 2; // e.g. -120° for i=0
+  const start = i * SEG_DEG - 90 - SEG_DEG / 2;
   const end   = start + SEG_DEG;
   const s = polarPt(start);
   const e = polarPt(end);
@@ -50,11 +47,11 @@ interface SpinWheelProps {
 }
 
 function SpinWheel({ sessionId, restaurantSlug, gamePlayUsed, onWin }: SpinWheelProps) {
-  const [rotation,   setRotation]   = useState(0);
-  const [spinning,   setSpinning]   = useState(false);
-  const [result,     setResult]     = useState<{ prize: string; won: boolean } | null>(null);
-  const [used,       setUsed]       = useState(gamePlayUsed);
-  const [error,      setError]      = useState<string | null>(null);
+  const [rotation,     setRotation]     = useState(0);
+  const [spinning,     setSpinning]     = useState(false);
+  const [result,       setResult]       = useState<{ prize: string; won: boolean } | null>(null);
+  const [used,         setUsed]         = useState(gamePlayUsed);
+  const [error,        setError]        = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
   const handleSpin = useCallback(async () => {
@@ -71,15 +68,11 @@ function SpinWheel({ sessionId, restaurantSlug, gamePlayUsed, onWin }: SpinWheel
       if (!res.ok) throw new Error(data.error ?? "Spin failed");
 
       const { segmentIndex = 0, prize = "", discountPct = 0, won = false } = data;
-
-      // Rotate so segmentIndex is at the top pointer
       const prevBase   = rotation % 360;
       const needed     = ((segmentIndex * SEG_DEG) - prevBase + 360) % 360;
       const newRotation = rotation + 5 * 360 + needed;
-
       setRotation(newRotation);
 
-      // Wait for animation to finish (4.2s)
       setTimeout(() => {
         setSpinning(false);
         setUsed(true);
@@ -94,24 +87,17 @@ function SpinWheel({ sessionId, restaurantSlug, gamePlayUsed, onWin }: SpinWheel
 
   return (
     <div className="flex flex-col items-center gap-6">
-      {/* Confetti */}
       {showConfetti && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
           <div className="animate-bounce text-6xl">🎉</div>
         </div>
       )}
-
-      {/* Wheel + pointer */}
       <div className="relative">
-        {/* Top pointer */}
         <div className="absolute left-1/2 -translate-x-1/2 -top-3 z-10">
           <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[20px] border-l-transparent border-r-transparent border-t-cu-accent" />
         </div>
-
         <svg
-          width="300"
-          height="300"
-          viewBox="0 0 300 300"
+          width="300" height="300" viewBox="0 0 300 300"
           className="drop-shadow-xl"
           style={{
             transform:  `rotate(${rotation}deg)`,
@@ -121,21 +107,15 @@ function SpinWheel({ sessionId, restaurantSlug, gamePlayUsed, onWin }: SpinWheel
           {WHEEL_SEGMENTS.map((seg, i) => {
             const midAngle = i * SEG_DEG - 90;
             const lp       = polarPt(midAngle, LABEL_R);
-            // Rotate text to be radial; flip bottom-half text to stay readable
-            const isBottom  = midAngle > 0 && midAngle < 180;
-            const textRot   = midAngle + 90 + (isBottom ? 180 : 0);
-
+            const isBottom = midAngle > 0 && midAngle < 180;
+            const textRot  = midAngle + 90 + (isBottom ? 180 : 0);
             return (
               <g key={seg.label}>
                 <path d={segPath(i)} fill={seg.color} stroke="#fff" strokeWidth="2" />
                 <text
                   transform={`translate(${lp.x},${lp.y}) rotate(${textRot})`}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill={seg.textColor}
-                  fontSize="13"
-                  fontWeight="bold"
-                  fontFamily="sans-serif"
+                  textAnchor="middle" dominantBaseline="middle"
+                  fill={seg.textColor} fontSize="13" fontWeight="bold" fontFamily="sans-serif"
                 >
                   <tspan x="0" dy="-7">{seg.line1}</tspan>
                   <tspan x="0" dy="16">{seg.line2}</tspan>
@@ -143,12 +123,10 @@ function SpinWheel({ sessionId, restaurantSlug, gamePlayUsed, onWin }: SpinWheel
               </g>
             );
           })}
-          {/* Center circle */}
           <circle cx={CX} cy={CY} r="20" fill="#1C1917" stroke="#fff" strokeWidth="3" />
         </svg>
       </div>
 
-      {/* Result */}
       {result && (
         <div className={cn(
           "w-full max-w-xs rounded-2xl p-4 text-center",
@@ -156,11 +134,10 @@ function SpinWheel({ sessionId, restaurantSlug, gamePlayUsed, onWin }: SpinWheel
         )}>
           <p className="text-2xl mb-1">{result.won ? "🎊" : "😅"}</p>
           <p className="font-bold text-cu-text text-lg">{result.won ? `You won: ${result.prize}!` : "Better luck next time!"}</p>
-          {result.won && <p className="text-sm text-cu-text/60 mt-1">Discount applied to your bill automatically.</p>}
+          {result.won && <p className="text-sm text-cu-text/60 mt-1">Discount applied to your order automatically.</p>}
         </div>
       )}
 
-      {/* Spin button */}
       {!used && (
         <button
           onClick={handleSpin}
@@ -170,10 +147,7 @@ function SpinWheel({ sessionId, restaurantSlug, gamePlayUsed, onWin }: SpinWheel
           {spinning ? "Spinning…" : "SPIN!"}
         </button>
       )}
-      {used && !result && (
-        <p className="text-sm text-cu-text/50">Spin wheel already used this session.</p>
-      )}
-
+      {used && !result && <p className="text-sm text-cu-text/50">Spin wheel already used this session.</p>}
       {error && <p className="text-sm text-cu-red">{error}</p>}
     </div>
   );
@@ -190,14 +164,14 @@ interface TriviaProps {
 }
 
 function FoodTrivia({ sessionId, restaurantSlug, onDiscount }: TriviaProps) {
-  const [questions,    setQuestions]    = useState<TriviaQuestion[]>([]);
-  const [current,      setCurrent]      = useState(0);
-  const [score,        setScore]        = useState(0);
-  const [selected,     setSelected]     = useState<number | null>(null);
-  const [done,         setDone]         = useState(false);
-  const [gameResult,   setGameResult]   = useState<{ won: boolean; score: number } | null>(null);
-  const [loading,      setLoading]      = useState(true);
-  const [submitting,   setSubmitting]   = useState(false);
+  const [questions,  setQuestions]  = useState<TriviaQuestion[]>([]);
+  const [current,    setCurrent]    = useState(0);
+  const [score,      setScore]      = useState(0);
+  const [selected,   setSelected]   = useState<number | null>(null);
+  const [done,       setDone]       = useState(false);
+  const [gameResult, setGameResult] = useState<{ won: boolean; score: number } | null>(null);
+  const [loading,    setLoading]    = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetch("/api/games/trivia?count=5")
@@ -210,12 +184,11 @@ function FoodTrivia({ sessionId, restaurantSlug, onDiscount }: TriviaProps) {
     if (selected !== null) return;
     setSelected(idx);
     const q = questions[current];
-    const correct = idx === q.correct;
+    const correct  = idx === q.correct;
     const newScore = correct ? score + 1 : score;
 
     setTimeout(async () => {
       if (current + 1 >= questions.length) {
-        // Round over
         setDone(true);
         setSubmitting(true);
         try {
@@ -224,9 +197,9 @@ function FoodTrivia({ sessionId, restaurantSlug, onDiscount }: TriviaProps) {
             headers: { "Content-Type": "application/json" },
             body:    JSON.stringify({ sessionId, restaurantSlug, score: newScore }),
           });
-          const data = await res.json() as { won?: boolean; score?: number };
+          const data = await res.json() as { won?: boolean; discountPct?: number };
           setGameResult({ won: !!data.won, score: newScore });
-          if (data.won) onDiscount(0.05);
+          if (data.won) onDiscount(data.discountPct ?? 0.05);
         } catch { /* ignore */ } finally {
           setSubmitting(false);
         }
@@ -258,12 +231,10 @@ function FoodTrivia({ sessionId, restaurantSlug, onDiscount }: TriviaProps) {
     return (
       <div className="flex flex-col items-center gap-4 py-8 text-center">
         <p className="text-5xl">{gameResult.won ? "🏆" : "📚"}</p>
-        <p className="text-xl font-bold text-cu-text">
-          {gameResult.score} / {questions.length} correct
-        </p>
+        <p className="text-xl font-bold text-cu-text">{gameResult.score} / {questions.length} correct</p>
         <p className="text-cu-text/70">
           {gameResult.won
-            ? "Excellent! 5% discount added to your bill!"
+            ? "Excellent! Discount added to your order!"
             : "Almost! Score 4/5 or better to win a discount."}
         </p>
         <button onClick={handleRestart} className="mt-2 flex items-center gap-2 rounded-xl bg-cu-accent/10 px-5 py-2.5 text-sm font-medium text-cu-accent">
@@ -278,26 +249,21 @@ function FoodTrivia({ sessionId, restaurantSlug, onDiscount }: TriviaProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Progress */}
       <div className="flex items-center justify-between text-xs text-cu-text/50">
         <span>Question {current + 1} of {questions.length}</span>
         <span>Score: {score}</span>
       </div>
       <div className="h-1.5 rounded-full bg-cu-border overflow-hidden">
-        <div className="h-full bg-cu-accent rounded-full transition-all" style={{ width: `${((current) / questions.length) * 100}%` }} />
+        <div className="h-full bg-cu-accent rounded-full transition-all" style={{ width: `${(current / questions.length) * 100}%` }} />
       </div>
-
-      {/* Question */}
       <p className="font-semibold text-cu-text text-base leading-snug">{q.question}</p>
-
-      {/* Options */}
       <div className="grid grid-cols-1 gap-2.5">
         {q.options.map((opt, idx) => {
           let style = "border-cu-border bg-white text-cu-text";
           if (selected !== null) {
-            if (idx === q.correct)        style = "border-cu-green bg-cu-green/10 text-cu-green font-semibold";
-            else if (idx === selected)    style = "border-cu-red bg-cu-red/10 text-cu-red";
-            else                          style = "border-cu-border bg-white/50 text-cu-text/40";
+            if (idx === q.correct)     style = "border-cu-green bg-cu-green/10 text-cu-green font-semibold";
+            else if (idx === selected) style = "border-cu-red bg-cu-red/10 text-cu-red";
+            else                       style = "border-cu-border bg-white/50 text-cu-text/40";
           }
           return (
             <button
@@ -316,109 +282,195 @@ function FoodTrivia({ sessionId, restaurantSlug, onDiscount }: TriviaProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Estimate the Bill component
+// Word Scramble — mind game replacing "Estimate the Bill"
 // ---------------------------------------------------------------------------
 
-interface OrderItem { name: string; quantity: number; unitPrice: number; }
-interface EstimateProps {
+const FOOD_WORDS = [
+  { word: "SPAGHETTI",  hint: "Long Italian pasta" },
+  { word: "TIRAMISU",   hint: "Italian coffee dessert" },
+  { word: "YAKITORI",   hint: "Japanese grilled skewers" },
+  { word: "BRUSCHETTA", hint: "Italian toasted bread" },
+  { word: "BIRYANI",    hint: "Fragrant rice dish" },
+  { word: "TEMPURA",    hint: "Japanese light batter frying" },
+  { word: "RISOTTO",    hint: "Creamy Italian rice" },
+  { word: "CARBONARA",  hint: "Roman egg and cheese pasta" },
+  { word: "GYOZA",      hint: "Japanese pan-fried dumplings" },
+  { word: "HUMMUS",     hint: "Chickpea dip from the Middle East" },
+  { word: "BURRITO",    hint: "Mexican flour tortilla wrap" },
+  { word: "GNOCCHI",    hint: "Italian potato dumplings" },
+  { word: "FALAFEL",    hint: "Deep-fried chickpea fritters" },
+  { word: "BAKLAVA",    hint: "Sweet Middle Eastern pastry" },
+  { word: "MASALA",     hint: "Indian spice blend" },
+];
+
+const ROUNDS = 5;
+
+function scramble(word: string): string {
+  const arr = word.split("");
+  let result = word;
+  let attempts = 0;
+  while (result === word && attempts < 20) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    result = arr.join("");
+    attempts++;
+  }
+  return result;
+}
+
+function buildRound(usedIndices: Set<number>): { index: number; scrambled: string; choices: string[] } {
+  const available = FOOD_WORDS.map((_, i) => i).filter((i) => !usedIndices.has(i));
+  const index = available[Math.floor(Math.random() * available.length)];
+  const correct = FOOD_WORDS[index].word;
+  const scrambled = scramble(correct);
+
+  // 3 wrong choices from remaining words
+  const wrongPool = FOOD_WORDS
+    .map((w, i) => ({ w: w.word, i }))
+    .filter(({ i }) => i !== index)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map(({ w }) => w);
+
+  const choices = [...wrongPool, correct].sort(() => Math.random() - 0.5);
+  return { index, scrambled, choices };
+}
+
+interface ScrambleProps {
   sessionId:      string;
   restaurantSlug: string;
   onDiscount:     (pct: number) => void;
 }
 
-function EstimateBill({ sessionId, restaurantSlug, onDiscount }: EstimateProps) {
-  const [items,     setItems]     = useState<OrderItem[]>([]);
-  const [total,     setTotal]     = useState(0);
-  const [guess,     setGuess]     = useState("");
-  const [revealed,  setRevealed]  = useState(false);
-  const [loading,   setLoading]   = useState(true);
-  const [submitted, setSubmitted] = useState(false);
+function WordScramble({ sessionId, restaurantSlug, onDiscount }: ScrambleProps) {
+  const usedRef  = useRef(new Set<number>());
 
-  useEffect(() => {
-    if (!sessionId) return;
-    fetch(`/api/customer/orders?sessionId=${sessionId}&restaurant=${restaurantSlug}`)
-      .then((r) => r.json())
-      .then((data: { orders?: Array<{ items: Array<{ quantity: number; unitPrice: number; dish: { name: string } }>; total: number }> }) => {
-        const allItems: OrderItem[] = [];
-        let grandTotal = 0;
-        (data.orders ?? []).forEach((o) => {
-          grandTotal += o.total;
-          o.items.forEach((i) => allItems.push({ name: i.dish.name, quantity: i.quantity, unitPrice: i.unitPrice }));
-        });
-        setItems(allItems);
-        setTotal(grandTotal);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [sessionId, restaurantSlug]);
+  const [round,      setRound]      = useState(0);
+  const [score,      setScore]      = useState(0);
+  const [selected,   setSelected]   = useState<string | null>(null);
+  const [done,       setDone]       = useState(false);
+  const [gameResult, setGameResult] = useState<{ won: boolean; discountPct: number } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [current,    setCurrent]    = useState(() => buildRound(usedRef.current));
 
-  const handleSubmit = useCallback(() => {
-    const g = parseFloat(guess);
-    if (isNaN(g) || g <= 0) return;
-    const diff = Math.abs(g - total) / total;
-    const won  = diff <= 0.10;
-    setRevealed(true);
-    setSubmitted(true);
-    if (won) onDiscount(0.05);
-  }, [guess, total, onDiscount]);
+  const correctWord = FOOD_WORDS[current.index].word;
+  const hint        = FOOD_WORDS[current.index].hint;
 
-  if (loading) return <div className="py-12 text-center text-cu-text/50 text-sm">Loading your order…</div>;
-  if (items.length === 0) return <div className="py-12 text-center text-cu-text/50 text-sm">No items ordered yet.</div>;
+  const handleAnswer = useCallback((choice: string) => {
+    if (selected !== null || done) return;
+    setSelected(choice);
+    const isCorrect = choice === correctWord;
+    const newScore  = isCorrect ? score + 1 : score;
 
-  const guessNum = parseFloat(guess);
-  const diff     = submitted ? Math.abs(guessNum - total) / total : null;
-  const won      = diff !== null && diff <= 0.10;
+    setTimeout(async () => {
+      const nextRound = round + 1;
+      if (nextRound >= ROUNDS) {
+        setDone(true);
+        setSubmitting(true);
+        try {
+          const res  = await fetch("/api/games/scramble", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ sessionId, restaurantSlug, score: newScore, total: ROUNDS }),
+          });
+          const data = await res.json() as { won?: boolean; discountPct?: number };
+          const won  = !!data.won;
+          const pct  = data.discountPct ?? 0;
+          setGameResult({ won, discountPct: pct });
+          if (won && pct > 0) onDiscount(pct);
+        } catch { /* ignore */ } finally {
+          setSubmitting(false);
+        }
+      } else {
+        usedRef.current.add(current.index);
+        setRound(nextRound);
+        setScore(newScore);
+        setSelected(null);
+        setCurrent(buildRound(usedRef.current));
+      }
+    }, 900);
+  }, [selected, done, correctWord, score, round, current.index, sessionId, restaurantSlug, onDiscount]);
+
+  const handleRestart = useCallback(() => {
+    usedRef.current = new Set();
+    setRound(0);
+    setScore(0);
+    setSelected(null);
+    setDone(false);
+    setGameResult(null);
+    setCurrent(buildRound(usedRef.current));
+  }, []);
+
+  if (done && gameResult) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-8 text-center">
+        <p className="text-5xl">{gameResult.won ? "🧩" : "🤔"}</p>
+        <p className="text-xl font-bold text-cu-text">{score} / {ROUNDS} words unscrambled</p>
+        <p className="text-cu-text/70">
+          {gameResult.won
+            ? `Amazing! ${(gameResult.discountPct * 100).toFixed(0)}% discount added to your order!`
+            : "Unscramble 4 or more to win a discount. Try again!"}
+        </p>
+        {!submitting && (
+          <button onClick={handleRestart} className="mt-2 flex items-center gap-2 rounded-xl bg-cu-accent/10 px-5 py-2.5 text-sm font-medium text-cu-accent">
+            <RotateCcw className="h-4 w-4" /> Play Again
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-cu-text/70">Can you guess your total? Get within 10% and win 5% off!</p>
-
-      {/* Items (no prices) */}
-      <div className="rounded-xl border border-cu-border bg-white divide-y divide-cu-border/50">
-        {items.map((item, i) => (
-          <div key={i} className="flex items-center justify-between px-4 py-2.5 text-sm">
-            <span className="text-cu-text">{item.name}</span>
-            <span className="text-cu-text/50 text-xs">×{item.quantity}</span>
-          </div>
-        ))}
+    <div className="flex flex-col gap-5">
+      {/* Progress */}
+      <div className="flex items-center justify-between text-xs text-cu-text/50">
+        <span>Word {round + 1} of {ROUNDS}</span>
+        <span>Score: {score}</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-cu-border overflow-hidden">
+        <div className="h-full bg-cu-accent rounded-full transition-all" style={{ width: `${(round / ROUNDS) * 100}%` }} />
       </div>
 
-      {/* Guess input */}
-      {!submitted ? (
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-cu-text/50">$</span>
-            <input
-              type="number"
-              value={guess}
-              onChange={(e) => setGuess(e.target.value)}
-              placeholder="0.00"
-              className="w-full rounded-xl border border-cu-border py-3 pl-7 pr-3 text-sm text-cu-text focus:border-cu-accent/50 focus:outline-none"
-            />
-          </div>
-          <button
-            onClick={handleSubmit}
-            disabled={!guess || isNaN(parseFloat(guess))}
-            className="rounded-xl bg-cu-accent px-5 py-3 text-sm font-semibold text-white disabled:opacity-40"
-          >
-            Guess!
-          </button>
+      {/* Hint */}
+      <p className="text-xs text-cu-muted text-center italic">Hint: {hint}</p>
+
+      {/* Scrambled word */}
+      <div className="flex justify-center">
+        <div className="flex gap-2 flex-wrap justify-center">
+          {current.scrambled.split("").map((letter, i) => (
+            <span
+              key={i}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-cu-accent/10 text-cu-accent font-display text-xl font-bold border border-cu-accent/20"
+            >
+              {letter}
+            </span>
+          ))}
         </div>
-      ) : (
-        <div className={cn(
-          "rounded-2xl p-4 text-center",
-          won ? "bg-cu-green/10 border border-cu-green/30" : "bg-cu-text/5 border border-cu-border"
-        )}>
-          <p className="text-2xl mb-1">{won ? "🎯" : "📊"}</p>
-          <p className="font-bold text-cu-text">Actual total: {formatCurrency(total)}</p>
-          <p className="text-sm text-cu-text/60 mt-1">Your guess: {formatCurrency(guessNum)}</p>
-          <p className="text-sm mt-2 font-medium">
-            {won
-              ? "Spot on! 5% discount added to your bill! 🎉"
-              : `Off by ${((diff ?? 0) * 100).toFixed(1)}% — within 10% wins a discount.`}
-          </p>
-        </div>
-      )}
+      </div>
+
+      {/* Choices */}
+      <div className="grid grid-cols-2 gap-2.5">
+        {current.choices.map((choice) => {
+          let style = "border-cu-border bg-white text-cu-text";
+          if (selected !== null) {
+            if (choice === correctWord)   style = "border-cu-green bg-cu-green/10 text-cu-green font-semibold";
+            else if (choice === selected) style = "border-cu-red bg-cu-red/10 text-cu-red";
+            else                          style = "border-cu-border bg-white/50 text-cu-text/40";
+          }
+          return (
+            <button
+              key={choice}
+              onClick={() => handleAnswer(choice)}
+              disabled={selected !== null}
+              className={cn("rounded-xl border-2 px-3 py-3 text-sm font-semibold text-center transition-all", style)}
+            >
+              {choice}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -432,13 +484,12 @@ export default function GamesPage() {
   const restaurantSlug = searchParams.get("restaurant") ?? "";
   const { sessionId }  = useCustomer();
 
-  const [tab,          setTab]          = useState<"spin" | "trivia" | "estimate">("spin");
+  const [tab,          setTab]          = useState<"spin" | "trivia" | "scramble">("spin");
   const [hasOrders,    setHasOrders]    = useState(false);
   const [gamePlayUsed, setGamePlayUsed] = useState(false);
   const [discount,     setDiscount]     = useState<number | null>(null);
   const [checking,     setChecking]     = useState(true);
 
-  // Check session status
   useEffect(() => {
     if (!sessionId) return;
     fetch(`/api/sessions?sessionId=${sessionId}`)
@@ -468,7 +519,6 @@ export default function GamesPage() {
     );
   }
 
-  // Locked state
   if (!hasOrders) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-cu-bg px-6 text-center">
@@ -481,26 +531,25 @@ export default function GamesPage() {
             Place an order to unlock games and win discounts!
           </p>
         </div>
-        <div className="flex gap-3 text-3xl">🎯 🎰 🧮</div>
+        <div className="flex gap-3 text-3xl">🎯 🎰 🧩</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-dvh bg-cu-bg">
-      {/* Header */}
       <header className="sticky top-0 z-10 border-b border-cu-border bg-white/95 px-4 py-3 backdrop-blur-sm">
         <h1 className="font-display text-lg font-bold text-cu-text text-center">Games & Prizes</h1>
         {discount !== null && (
           <p className="text-center text-xs text-cu-green font-medium mt-0.5">
-            🎉 {(discount * 100).toFixed(0)}% discount won — applied to your bill!
+            🎉 {(discount * 100).toFixed(0)}% discount won — applied to your order!
           </p>
         )}
       </header>
 
       {/* Tab bar */}
       <div className="flex border-b border-cu-border bg-white">
-        {(["spin", "trivia", "estimate"] as const).map((t) => (
+        {(["spin", "trivia", "scramble"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -511,14 +560,13 @@ export default function GamesPage() {
                 : "text-cu-text/50 hover:text-cu-text"
             )}
           >
-            {t === "spin"     && "🎰 Spin"}
-            {t === "trivia"   && "🧠 Trivia"}
-            {t === "estimate" && "🧮 Estimate"}
+            {t === "spin"    && "🎰 Spin"}
+            {t === "trivia"  && "🧠 Trivia"}
+            {t === "scramble"&& "🧩 Scramble"}
           </button>
         ))}
       </div>
 
-      {/* Tab content */}
       <div className="p-5 pb-24">
         {tab === "spin" && sessionId && (
           <div className="flex flex-col items-center">
@@ -539,7 +587,7 @@ export default function GamesPage() {
             <div className="mb-4 flex items-center gap-2.5 rounded-xl bg-cu-accent/5 p-3">
               <Trophy className="h-5 w-5 shrink-0 text-cu-accent" />
               <p className="text-sm text-cu-text/70">
-                Score <strong className="text-cu-text">4 out of 5</strong> to win a 5% discount!
+                Score <strong className="text-cu-text">4 out of 5</strong> to win a discount!
               </p>
             </div>
             <FoodTrivia
@@ -550,15 +598,15 @@ export default function GamesPage() {
           </div>
         )}
 
-        {tab === "estimate" && sessionId && (
+        {tab === "scramble" && sessionId && (
           <div>
             <div className="mb-4 flex items-center gap-2.5 rounded-xl bg-cu-accent/5 p-3">
-              <Calculator className="h-5 w-5 shrink-0 text-cu-accent" />
+              <Shuffle className="h-5 w-5 shrink-0 text-cu-accent" />
               <p className="text-sm text-cu-text/70">
-                Guess your bill within <strong className="text-cu-text">10%</strong> to win 5% off!
+                Unscramble <strong className="text-cu-text">4 of 5</strong> food words to win a discount!
               </p>
             </div>
-            <EstimateBill
+            <WordScramble
               sessionId={sessionId}
               restaurantSlug={restaurantSlug}
               onDiscount={handleDiscount}

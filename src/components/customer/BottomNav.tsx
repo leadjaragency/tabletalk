@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { UtensilsCrossed, MessageCircle, Gamepad2, Receipt, MoreHorizontal } from "lucide-react";
+import { UtensilsCrossed, MessageCircle, Gamepad2, ClipboardList, MoreHorizontal } from "lucide-react";
 import { useCartStore, selectItemCount } from "@/lib/store";
 
 // ---------------------------------------------------------------------------
@@ -21,7 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Menu",  segment: "menu",  icon: UtensilsCrossed, emoji: "📋", cartBadge: true },
   { label: "Chat",  segment: "chat",  icon: MessageCircle,   emoji: "💬" },
   { label: "Games", segment: "games", icon: Gamepad2,        emoji: "🎰" },
-  { label: "Bill",  segment: "bill",  icon: Receipt,         emoji: "🧾" },
+  { label: "Order", segment: "bill",  icon: ClipboardList,   emoji: "📋" },
   { label: "More",  segment: "about", icon: MoreHorizontal,  emoji: "☰" },
 ];
 

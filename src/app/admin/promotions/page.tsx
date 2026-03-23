@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Tag, Plus, Trash2, ToggleLeft, ToggleRight, Loader2, X, CalendarRange } from "lucide-react";
+import { Tag, Plus, Trash2, ToggleLeft, ToggleRight, Loader2, X, CalendarRange, Gamepad2, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Promotion {
@@ -215,12 +215,34 @@ function PromoModal({
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Game Settings defaults
+// ---------------------------------------------------------------------------
+
+interface GameSettings {
+  spinTier1:   number;
+  spinTier2:   number;
+  spinTier3:   number;
+  triviaWin:   number;
+  scrambleWin: number;
+}
+
+const DEFAULT_GAME_SETTINGS: GameSettings = {
+  spinTier1: 5, spinTier2: 10, spinTier3: 15, triviaWin: 5, scrambleWin: 5,
+};
+
 export default function PromotionsPage() {
-  const [promos,   setPromos]   = useState<Promotion[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [modal,    setModal]    = useState<Partial<Promotion> | null>(null);
-  const [toggling, setToggling] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [promos,       setPromos]       = useState<Promotion[]>([]);
+  const [loading,      setLoading]      = useState(true);
+  const [modal,        setModal]        = useState<Partial<Promotion> | null>(null);
+  const [toggling,     setToggling]     = useState<string | null>(null);
+  const [deleting,     setDeleting]     = useState<string | null>(null);
+
+  // Game settings state
+  const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
+  const [gsLoading,    setGsLoading]    = useState(true);
+  const [gsSaving,     setGsSaving]     = useState(false);
+  const [gsSaved,      setGsSaved]      = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -231,7 +253,16 @@ export default function PromotionsPage() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadGameSettings = useCallback(async () => {
+    try {
+      const res  = await fetch("/api/restaurant/game-settings");
+      const data = await res.json() as { gameSettings?: GameSettings };
+      if (res.ok && data.gameSettings) setGameSettings(data.gameSettings);
+    } catch { /* ignore */ }
+    finally { setGsLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); loadGameSettings(); }, [load, loadGameSettings]);
 
   async function handleToggle(p: Promotion) {
     setToggling(p.id);
@@ -257,6 +288,20 @@ export default function PromotionsPage() {
       setPromos((prev) => prev.filter((x) => x.id !== id));
     } catch { /* ignore */ }
     finally { setDeleting(null); }
+  }
+
+  async function saveGameSettings() {
+    setGsSaving(true);
+    setGsSaved(false);
+    try {
+      const res = await fetch("/api/restaurant/game-settings", {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(gameSettings),
+      });
+      if (res.ok) { setGsSaved(true); setTimeout(() => setGsSaved(false), 2500); }
+    } catch { /* ignore */ }
+    finally { setGsSaving(false); }
   }
 
   function handleSaved(p: Promotion) {
@@ -297,12 +342,60 @@ export default function PromotionsPage() {
         </button>
       </div>
 
-      {/* Game Prize Info */}
-      <div className="rounded-xl border border-ra-accent/20 bg-ra-accent/5 px-4 py-3">
-        <p className="text-sm text-ra-muted">
-          <span className="font-medium text-ra-accent">🎰 Game Prizes:</span>
-          {" "}Players can win 5%, 10%, or 15% off — automatically applied at checkout via spin wheel and trivia.
-        </p>
+      {/* Game Settings Card */}
+      <div className="rounded-2xl border border-ra-border bg-ra-surface p-5 space-y-4">
+        <div className="flex items-center gap-2.5">
+          <Gamepad2 className="h-5 w-5 text-ra-accent" />
+          <h2 className="font-semibold text-ra-text">Game Prize Settings</h2>
+          <span className="ml-auto text-xs text-ra-muted">Applied automatically when customers win games</span>
+        </div>
+
+        {gsLoading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-5 w-5 animate-spin text-ra-accent" />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {(
+                [
+                  { key: "spinTier1",   label: "Spin Tier 1",   icon: "🎰" },
+                  { key: "spinTier2",   label: "Spin Tier 2",   icon: "🎰" },
+                  { key: "spinTier3",   label: "Spin Tier 3",   icon: "🎰" },
+                  { key: "triviaWin",   label: "Trivia Win",    icon: "🧠" },
+                  { key: "scrambleWin", label: "Scramble Win",  icon: "🧩" },
+                ] as { key: keyof GameSettings; label: string; icon: string }[]
+              ).map(({ key, label, icon }) => (
+                <div key={key} className="rounded-xl border border-ra-border bg-ra-bg p-3">
+                  <p className="text-xs text-ra-muted mb-2">{icon} {label}</p>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={gameSettings[key]}
+                      onChange={(e) =>
+                        setGameSettings((prev) => ({ ...prev, [key]: parseInt(e.target.value) || 1 }))
+                      }
+                      className="w-full rounded-lg border border-ra-border bg-ra-surface px-2 py-1.5 text-sm font-bold text-ra-text focus:border-ra-accent/50 focus:outline-none text-center"
+                    />
+                    <span className="text-sm text-ra-muted shrink-0">%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={saveGameSettings}
+                disabled={gsSaving}
+                className="flex items-center gap-2 rounded-xl bg-ra-accent px-4 py-2 text-sm font-semibold text-ra-bg disabled:opacity-50 hover:bg-ra-accent/90 transition-colors"
+              >
+                {gsSaving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving…</> : <><Save className="h-4 w-4" />Save Game Settings</>}
+              </button>
+              {gsSaved && <span className="text-xs text-emerald-400 font-medium">✓ Saved!</span>}
+            </div>
+          </>
+        )}
       </div>
 
       {promos.length === 0 ? (

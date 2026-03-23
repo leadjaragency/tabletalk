@@ -205,7 +205,7 @@ function AddToCartSheet({
             className="w-full flex items-center justify-between rounded-2xl bg-cu-accent px-5 py-3.5 text-white font-semibold hover:bg-cu-accent/90 active:scale-[0.98] transition-all"
           >
             <span className="text-sm opacity-80">{qty} item{qty > 1 ? "s" : ""}</span>
-            <span>Add to Cart</span>
+            <span>Add to Order</span>
             <span className="font-bold">{formatCurrency(dish.price * qty)}</span>
           </button>
         </div>
@@ -381,7 +381,7 @@ function DishDetailSheet({
             className="w-full flex items-center justify-center gap-2 rounded-2xl bg-cu-accent px-5 py-4 text-white font-semibold text-base hover:bg-cu-accent/90 active:scale-[0.98] transition-all"
           >
             <Plus size={18} />
-            Add to Cart — {formatCurrency(dish.price)}
+            Add to Order — {formatCurrency(dish.price)}
           </button>
         </div>
       </div>

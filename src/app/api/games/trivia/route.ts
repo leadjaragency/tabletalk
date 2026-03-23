@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { TRIVIA_QUESTIONS } from "@/lib/constants";
+import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/app/api/restaurant/game-settings/route";
 
 export const dynamic = "force-dynamic";
 
@@ -48,11 +49,15 @@ export async function POST(req: Request) {
 
     const restaurant = await prisma.restaurant.findUnique({
       where:  { slug: restaurantSlug, status: "active" },
-      select: { id: true },
+      select: { id: true, branding: true },
     });
     if (!restaurant) {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
     }
+
+    const branding    = (restaurant.branding ?? {}) as Record<string, unknown>;
+    const gs          = ({ ...DEFAULT_GAME_SETTINGS, ...(branding.gameSettings ?? {}) }) as GameSettings;
+    const winPct      = gs.triviaWin / 100;
 
     const session = await prisma.tableSession.findUnique({
       where:  { id: sessionId },
@@ -62,15 +67,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });
     }
 
-    const won        = score >= 4;
-    const discountPct = won ? 0.05 : 0;
+    const won         = score >= 4;
+    const discountPct = won ? winPct : 0;
 
     await prisma.gameResult.create({
       data: {
         restaurantId: restaurant.id,
         sessionId,
         gameType:    "trivia",
-        prize:       won ? "5% OFF" : null,
+        prize:       won ? `${gs.triviaWin}% OFF` : null,
         discountPct: discountPct,
         won,
       },

@@ -81,13 +81,12 @@ export async function middleware(req: NextRequest) {
   // Covers /api/menu, /api/tables, /api/orders, /api/waiters, /api/qr, etc.
   // /api/auth/* and /api/chat/* are excluded via the matcher below.
   const restaurantApiPrefixes = [
-    // NOTE: /api/menu and /api/categories are intentionally excluded here —
-    // they handle public customer access (via restaurantSlug param) and
-    // admin access (via session) internally in the route handler.
+    // NOTE: /api/menu, /api/categories, and /api/orders are intentionally
+    // excluded — they handle public customer access and admin access
+    // internally in their route handlers (dual-auth pattern).
     "/api/categories",
     "/api/tables",
     "/api/waiters",
-    "/api/orders",
     "/api/qr",
     "/api/reviews",
     "/api/promotions",

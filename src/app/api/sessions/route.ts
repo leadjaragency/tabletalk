@@ -69,6 +69,15 @@ export async function POST(req: Request) {
       );
     }
 
+    // ── Guard: block if table already has an active session ─────────────
+    const existing = await prisma.tableSession.findFirst({
+      where: { tableId: table.id, endedAt: null },
+      select: { id: true },
+    });
+    if (existing) {
+      return NextResponse.json({ error: "table_occupied" }, { status: 409 });
+    }
+
     // ── Create session + mark table occupied (transaction) ───────────────
     const [session] = await prisma.$transaction([
       prisma.tableSession.create({

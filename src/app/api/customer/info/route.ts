@@ -92,6 +92,16 @@ export async function GET(req: Request) {
       );
     }
 
+    // ── Session lock check ───────────────────────────────────────────────
+    const sessionId = searchParams.get("sessionId")?.trim() ?? null;
+    const activeSession = await prisma.tableSession.findFirst({
+      where: { tableId: table.id, endedAt: null },
+      select: { id: true },
+    });
+    if (activeSession && sessionId !== activeSession.id) {
+      return NextResponse.json({ error: "table_occupied" }, { status: 409 });
+    }
+
     // Strip internal status from restaurant before sending
     const { status: _status, ...restaurantPublic } = restaurant;
 

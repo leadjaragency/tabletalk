@@ -54,6 +54,7 @@ export interface CustomerContextValue {
   setSessionId: (id: string) => void;
   loading: boolean;
   error: string | null;
+  tableOccupied: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -90,8 +91,9 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined" || !sessionKey) return null;
     return localStorage.getItem(sessionKey);
   });
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState<string | null>(null);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState<string | null>(null);
+  const [tableOccupied, setTableOccupied] = useState(false);
 
   const storeSessionId = useCallback((id: string) => {
     setSessionIdState(id);
@@ -111,12 +113,16 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     }
 
     const controller = new AbortController();
+    const sid = sessionId;
+    const infoUrl = `/api/customer/info?restaurant=${encodeURIComponent(restaurantSlug)}&table=${tableNumber}${sid ? `&sessionId=${encodeURIComponent(sid)}` : ""}`;
 
-    fetch(
-      `/api/customer/info?restaurant=${encodeURIComponent(restaurantSlug)}&table=${tableNumber}`,
-      { signal: controller.signal }
-    )
+    fetch(infoUrl, { signal: controller.signal })
       .then(async (res) => {
+        if (res.status === 409) {
+          setTableOccupied(true);
+          setLoading(false);
+          return null;
+        }
         if (!res.ok) {
           const body = await res.json().catch(() => ({})) as { error?: string };
           throw new Error(body.error ?? "Failed to load restaurant info.");
@@ -127,10 +133,11 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
           waiter: CustomerWaiter | null;
         }>;
       })
-      .then(({ restaurant, table, waiter }) => {
-        setRestaurant(restaurant);
-        setTable(table);
-        setWaiter(waiter);
+      .then((data) => {
+        if (!data) return;
+        setRestaurant(data.restaurant);
+        setTable(data.table);
+        setWaiter(data.waiter);
         setLoading(false);
       })
       .catch((err: Error) => {
@@ -141,11 +148,11 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       });
 
     return () => controller.abort();
-  }, [restaurantSlug, tableNumber]);
+  }, [restaurantSlug, tableNumber, sessionId]);
 
   return (
     <CustomerContext.Provider
-      value={{ restaurant, table, waiter, sessionId, setSessionId: storeSessionId, loading, error }}
+      value={{ restaurant, table, waiter, sessionId, setSessionId: storeSessionId, loading, error, tableOccupied }}
     >
       {children}
     </CustomerContext.Provider>

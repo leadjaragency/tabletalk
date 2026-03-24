@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { Wifi, WifiOff } from "lucide-react";
+import { Toaster } from "sonner";
 
 export default async function AdminLayout({
   children,
@@ -125,6 +126,7 @@ export default async function AdminLayout({
         {/* Page content */}
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
+      <Toaster position="top-right" theme="dark" richColors />
     </div>
   );
 }

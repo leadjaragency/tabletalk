@@ -1,17 +1,39 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Plus, Users, QrCode, MessageSquare, ChevronRight, X,
   Clock, Utensils, Trash2, UserCheck, RefreshCw, RotateCcw,
+  Gamepad2, Receipt,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
-import { Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter } from "@/components/ui/Modal";
+import { Modal } from "@/components/ui/Modal";
 import { TableStatusBadge, OrderStatusBadge } from "@/components/ui/StatusBadge";
 import { Select } from "@/components/ui/Select";
-import { cn, formatTimeAgo } from "@/lib/utils";
+import { cn, formatTimeAgo, formatCurrency } from "@/lib/utils";
+import { usePolling } from "@/hooks/usePolling";
+
+// ---------------------------------------------------------------------------
+// Notification beep — Web Audio API (no file dependency)
+// ---------------------------------------------------------------------------
+
+function playNotificationBeep() {
+  try {
+    const ctx  = new AudioContext();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.6);
+  } catch { /* AudioContext unavailable in some environments */ }
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,29 +68,75 @@ interface Session {
 }
 
 interface Table {
-  id:          string;
-  number:      number;
-  seats:       number;
-  status:      string;
-  qrCode:      string | null;
-  waiter:      Waiter | null;
-  orders:      Order[];
-  sessions:    Session[];
+  id:           string;
+  number:       number;
+  seats:        number;
+  status:       string;
+  qrCode:       string | null;
+  waiter:       Waiter | null;
+  orders:       Order[];
+  sessions:     Session[];
   restaurantId: string;
+  createdAt:    string;
+  updatedAt:    string;
+}
+
+// Detail types — loaded from GET /api/tables/[id] on slide-over open
+
+interface DetailedOrderItem {
+  id:          string;
+  quantity:    number;
+  unitPrice:   number;
+  specialInst: string | null;
+  dish:        { name: string; price: number; imageEmoji: string | null };
+}
+
+interface DetailedOrder {
+  id:           string;
+  orderNumber:  string;
+  status:       string;
+  subtotal:     number;
+  tax:          number;
+  discount:     number;
+  total:        number;
+  specialNotes: string | null;
+  createdAt:    string;
+  items:        DetailedOrderItem[];
+}
+
+interface GameResult {
+  id:          string;
+  gameType:    string;
+  prize:       string | null;
+  discountPct: number | null;
+  won:         boolean;
   createdAt:   string;
-  updatedAt:   string;
+}
+
+interface DetailedSession {
+  id:           string;
+  guestCount:   number | null;
+  startedAt:    string;
+  dietaryPrefs: string[];
+  discount:     number | null;
+  orders:       DetailedOrder[];
+}
+
+interface TableDetail {
+  sessions:    DetailedSession[];
+  gameResults: GameResult[];
 }
 
 type TableStatus = "all" | "occupied" | "ordering" | "billing" | "empty";
 
 export interface TablesPageClientProps {
-  tables:  Table[];
-  waiters: Waiter[];
+  tables:         Table[];
+  waiters:        Waiter[];
   restaurantSlug: string;
 }
 
 // ---------------------------------------------------------------------------
-// Status colours (used for card accent lines)
+// Status colours (card left border accent)
 // ---------------------------------------------------------------------------
 
 const statusAccent: Record<string, string> = {
@@ -87,7 +155,7 @@ function AddTableModal({
   onClose,
 }: {
   waiters: Waiter[];
-  onClose:  () => void;
+  onClose: () => void;
 }) {
   const router = useRouter();
   const [number,   setNumber]   = useState("");
@@ -215,7 +283,7 @@ function DeleteTableModal({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [error,   setError]   = useState<string | null>(null);
+  const [error,    setError]    = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
@@ -275,7 +343,7 @@ function ResetTableModal({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [error,    setError]    = useState<string | null>(null);
+  const [error,     setError]     = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
 
   async function handleReset() {
@@ -347,17 +415,32 @@ function ResetTableModal({
 function TableSlideOver({
   table,
   waiters,
+  detail,
+  detailLoading,
   onClose,
   onReset,
 }: {
-  table:   Table;
-  waiters: Waiter[];
-  onClose: () => void;
-  onReset: () => void;
+  table:         Table;
+  waiters:       Waiter[];
+  detail:        TableDetail | null;
+  detailLoading: boolean;
+  onClose:       () => void;
+  onReset:       () => void;
 }) {
-  const router  = useRouter();
-  const session = table.sessions[0] ?? null;
-  const latestOrder = table.orders[0] ?? null;
+  const router = useRouter();
+
+  // Use detail session when loaded; fall back to basic session from polling data
+  const basicSession  = table.sessions[0] ?? null;
+  const activeSession = detail?.sessions[0] ?? basicSession;
+  const sessionOrders = detail?.sessions[0]?.orders ?? [];
+  const gameResults   = detail?.gameResults ?? [];
+
+  // Bill totals derived from all session orders
+  const billSubtotal = sessionOrders.reduce((s, o) => s + o.subtotal, 0);
+  const billTax      = sessionOrders.reduce((s, o) => s + o.tax, 0);
+  const billDiscount = sessionOrders.reduce((s, o) => s + o.discount, 0)
+                       + (detail?.sessions[0]?.discount ?? 0);
+  const billTotal    = billSubtotal + billTax - billDiscount;
 
   const [assigningWaiter, setAssigningWaiter] = useState(false);
   const [selectedWaiter,  setSelectedWaiter]  = useState(table.waiter?.id ?? "none");
@@ -424,8 +507,8 @@ function TableSlideOver({
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-          {/* Active session */}
-          {session && (
+          {/* ── Active session info ────────────────────────────────── */}
+          {activeSession && (
             <section>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
                 Active Session
@@ -433,19 +516,19 @@ function TableSlideOver({
               <div className="rounded-xl border border-ra-border bg-ra-bg p-4 space-y-2 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-ra-muted">Started</span>
-                  <span className="text-ra-text">{formatTimeAgo(new Date(session.startedAt))}</span>
+                  <span className="text-ra-text">{formatTimeAgo(new Date(activeSession.startedAt))}</span>
                 </div>
-                {session.guestCount && (
+                {activeSession.guestCount && (
                   <div className="flex items-center justify-between">
                     <span className="text-ra-muted">Guests</span>
-                    <span className="text-ra-text">{session.guestCount}</span>
+                    <span className="text-ra-text">{activeSession.guestCount}</span>
                   </div>
                 )}
-                {session.dietaryPrefs.length > 0 && (
+                {activeSession.dietaryPrefs.length > 0 && (
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-ra-muted shrink-0">Dietary</span>
                     <span className="text-ra-text text-right">
-                      {session.dietaryPrefs.join(", ")}
+                      {activeSession.dietaryPrefs.join(", ")}
                     </span>
                   </div>
                 )}
@@ -453,38 +536,118 @@ function TableSlideOver({
             </section>
           )}
 
-          {/* Current order */}
-          {latestOrder && (
+          {/* ── All session orders ─────────────────────────────────── */}
+          {activeSession && (
             <section>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
-                Latest Order
+                Orders This Session
               </h3>
-              <div className="rounded-xl border border-ra-border bg-ra-bg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-ra-text">#{latestOrder.orderNumber}</span>
-                  <OrderStatusBadge status={latestOrder.status as "received" | "preparing" | "ready" | "served"} />
-                </div>
-                <ul className="space-y-1">
-                  {latestOrder.items.map((item) => (
-                    <li key={item.id} className="flex items-center justify-between text-sm">
-                      <span className="text-ra-muted">{item.quantity}× {item.dish.name}</span>
-                    </li>
+              {detailLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-20 rounded-xl bg-ra-bg animate-pulse border border-ra-border" />
                   ))}
-                </ul>
-                <div className="flex items-center justify-between pt-1 border-t border-ra-border">
-                  <span className="text-xs text-ra-muted">
-                    {formatTimeAgo(new Date(latestOrder.createdAt))}
-                  </span>
-                  <span className="text-sm font-semibold text-ra-text">
-                    ${latestOrder.total.toFixed(2)}
-                  </span>
+                </div>
+              ) : sessionOrders.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-ra-border/40 bg-ra-bg/40 px-4 py-3 text-center">
+                  <p className="text-xs text-ra-muted/50">No orders placed yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {sessionOrders.map((order) => (
+                    <div key={order.id} className="rounded-xl border border-ra-border bg-ra-bg p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-ra-text">#{order.orderNumber}</span>
+                        <OrderStatusBadge status={order.status as "received" | "preparing" | "ready" | "served"} />
+                      </div>
+                      <ul className="space-y-0.5">
+                        {order.items.map((item) => (
+                          <li key={item.id} className="flex items-center justify-between text-xs text-ra-muted">
+                            <span>
+                              {item.dish.imageEmoji ? `${item.dish.imageEmoji} ` : ""}
+                              {item.quantity}× {item.dish.name}
+                            </span>
+                            <span>{formatCurrency(item.unitPrice * item.quantity)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {order.specialNotes && (
+                        <p className="text-xs text-ra-muted/60 italic">Note: {order.specialNotes}</p>
+                      )}
+                      <div className="flex items-center justify-between pt-1 border-t border-ra-border/60">
+                        <span className="text-xs text-ra-muted">{formatTimeAgo(new Date(order.createdAt))}</span>
+                        <span className="text-sm font-semibold text-ra-text">{formatCurrency(order.total)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ── Games & Rewards ────────────────────────────────────── */}
+          {activeSession && !detailLoading && (
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3 flex items-center gap-1.5">
+                <Gamepad2 size={12} /> Games & Rewards
+              </h3>
+              {gameResults.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-ra-border/40 bg-ra-bg/40 px-4 py-3 text-center">
+                  <p className="text-xs text-ra-muted/50">No games played yet</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-ra-border bg-ra-bg p-4 space-y-2">
+                  {gameResults.map((g) => (
+                    <div key={g.id} className="flex items-center justify-between text-sm">
+                      <span className="text-ra-muted capitalize">
+                        {g.gameType.replace(/_/g, " ")}
+                      </span>
+                      <span className={cn(
+                        "text-xs font-medium rounded-full px-2 py-0.5",
+                        g.won
+                          ? "bg-green-500/15 text-green-400"
+                          : "bg-ra-border/60 text-ra-muted"
+                      )}>
+                        {g.won ? (g.prize ?? `${g.discountPct}% OFF`) : "No win"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ── Bill Summary ───────────────────────────────────────── */}
+          {activeSession && !detailLoading && sessionOrders.length > 0 && (
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3 flex items-center gap-1.5">
+                <Receipt size={12} /> Bill Summary
+              </h3>
+              <div className="rounded-xl border border-ra-border bg-ra-bg p-4 space-y-1.5 text-sm">
+                <div className="flex justify-between text-ra-muted">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(billSubtotal)}</span>
+                </div>
+                <div className="flex justify-between text-ra-muted">
+                  <span>Tax</span>
+                  <span>{formatCurrency(billTax)}</span>
+                </div>
+                {billDiscount > 0 && (
+                  <div className="flex justify-between text-green-400">
+                    <span>Discount</span>
+                    <span>- {formatCurrency(billDiscount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-semibold text-ra-text pt-1.5 border-t border-ra-border">
+                  <span>Total</span>
+                  <span>{formatCurrency(Math.max(0, billTotal))}</span>
                 </div>
               </div>
             </section>
           )}
 
-          {/* Chat log link */}
-          {session && (
+          {/* ── Chat transcript link ───────────────────────────────── */}
+          {activeSession && (
             <section>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
                 Chat Transcript
@@ -496,7 +659,7 @@ function TableSlideOver({
             </section>
           )}
 
-          {/* Reassign waiter */}
+          {/* ── Reassign waiter ────────────────────────────────────── */}
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
               AI Waiter
@@ -523,7 +686,7 @@ function TableSlideOver({
             </div>
           </section>
 
-          {/* Quick links */}
+          {/* ── Quick links ────────────────────────────────────────── */}
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3">
               Quick Links
@@ -570,10 +733,7 @@ function TableSlideOver({
               variant="ghost"
               size="icon-sm"
               className="text-red-400 hover:bg-red-500/10"
-              onClick={() => {
-                onClose();
-                // parent handles delete modal via state
-              }}
+              onClick={onClose}
               title="Delete table"
             >
               <Trash2 size={15} />
@@ -598,7 +758,8 @@ function TableCard({
   onSelect: (t: Table) => void;
   onDelete: (t: Table) => void;
 }) {
-  const isActive = table.status !== "empty";
+  const isActive    = table.status !== "empty";
+  const isBilling   = table.status === "billing";
   const latestOrder = table.orders[0] ?? null;
   const itemSummary = latestOrder?.items
     .map((i) => `${i.quantity}× ${i.dish.name}`)
@@ -611,7 +772,8 @@ function TableCard({
         "border-l-4 transition-all duration-200",
         "hover:border-ra-accent/40 hover:shadow-lg hover:shadow-black/20",
         statusAccent[table.status] ?? "border-l-ra-border",
-        isActive ? "border-ra-border/80" : "border-ra-border/40"
+        isActive ? "border-ra-border/80" : "border-ra-border/40",
+        isBilling && "ring-2 ring-green-500/60 animate-pulse"
       )}
       onClick={() => onSelect(table)}
     >
@@ -706,17 +868,61 @@ function TableCard({
 // Main component
 // ---------------------------------------------------------------------------
 
-export function TablesPageClient({ tables, waiters, restaurantSlug }: TablesPageClientProps) {
+export function TablesPageClient({ tables: initialTables, waiters, restaurantSlug }: TablesPageClientProps) {
   const router = useRouter();
 
+  const [tables,        setTables]        = useState<Table[]>(initialTables);
   const [filter,        setFilter]        = useState<TableStatus>("all");
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [detail,        setDetail]        = useState<TableDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [deleteTarget,  setDeleteTarget]  = useState<Table | null>(null);
   const [resetTarget,   setResetTarget]   = useState<Table | null>(null);
   const [showAddModal,  setShowAddModal]  = useState(false);
   const [refreshing,    setRefreshing]    = useState(false);
 
-  // Counts for filter tabs
+  // ── Auto-polling every 10s ──────────────────────────────────────────────
+  const { data: polledTables } = usePolling<Table[]>("/api/tables", {
+    intervalMs: 10_000,
+    onNewData: (next, prev) => {
+      if (!prev) return;
+      next.forEach((t) => {
+        const before = prev.find((p) => p.id === t.id);
+        if (before && before.status !== "billing" && t.status === "billing") {
+          toast.info(`🔔 Table ${t.number} is requesting the payment machine!`, {
+            duration: 10_000,
+          });
+          playNotificationBeep();
+        }
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (!polledTables) return;
+    setTables(polledTables);
+    // Keep the slide-over's table data in sync with latest status
+    setSelectedTable((prev) =>
+      prev ? (polledTables.find((t) => t.id === prev.id) ?? prev) : null
+    );
+  }, [polledTables]);
+
+  // ── Open slide-over + fetch detail ─────────────────────────────────────
+  const handleSelectTable = useCallback(async (table: Table) => {
+    setSelectedTable(table);
+    setDetail(null);
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`/api/tables/${table.id}`);
+      if (res.ok) {
+        setDetail(await res.json() as TableDetail);
+      }
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  // Counts and filtered list use live `tables` state (updated by polling)
   const counts = {
     all:      tables.length,
     occupied: tables.filter((t) => t.status === "occupied").length,
@@ -756,6 +962,10 @@ export function TablesPageClient({ tables, waiters, restaurantSlug }: TablesPage
     { key: "billing",  label: "Billing" },
     { key: "empty",    label: "Empty" },
   ];
+
+  // Suppress unused variable warning
+  void handleDeleteFromSlideOver;
+  void restaurantSlug;
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -836,7 +1046,7 @@ export function TablesPageClient({ tables, waiters, restaurantSlug }: TablesPage
             <TableCard
               key={table.id}
               table={table}
-              onSelect={setSelectedTable}
+              onSelect={handleSelectTable}
               onDelete={setDeleteTarget}
             />
           ))}
@@ -864,7 +1074,9 @@ export function TablesPageClient({ tables, waiters, restaurantSlug }: TablesPage
         <TableSlideOver
           table={selectedTable}
           waiters={waiters}
-          onClose={() => setSelectedTable(null)}
+          detail={detail}
+          detailLoading={detailLoading}
+          onClose={() => { setSelectedTable(null); setDetail(null); }}
           onReset={handleResetFromSlideOver}
         />
       )}

@@ -20,30 +20,25 @@ export async function GET(_req: Request, { params }: Ctx) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    const restaurantId = session.user.restaurantId;
+
     const table = await prisma.table.findUnique({
       where: { id },
       include: {
         waiter: { select: { id: true, name: true, avatar: true, personality: true } },
-        orders: {
-          orderBy: { createdAt: "desc" },
-          take:    10,
-          include: {
-            items: {
-              include: { dish: { select: { name: true, price: true } } },
-            },
-          },
-        },
+        // Active session with ALL orders for this session
         sessions: {
+          where:   { endedAt: null },
+          take:    1,
           orderBy: { startedAt: "desc" },
-          take:    5,
           include: {
-            chatSessions: {
-              take:    1,
-              orderBy: { createdAt: "desc" },
+            orders: {
+              orderBy: { createdAt: "asc" },
               include: {
-                messages: {
-                  orderBy: { createdAt: "desc" },
-                  take:    10,
+                items: {
+                  include: {
+                    dish: { select: { name: true, price: true, imageEmoji: true } },
+                  },
                 },
               },
             },
@@ -52,11 +47,28 @@ export async function GET(_req: Request, { params }: Ctx) {
       },
     });
 
-    if (!table || table.restaurantId !== session.user.restaurantId) {
+    if (!table || table.restaurantId !== restaurantId) {
       return NextResponse.json({ error: "Not found." }, { status: 404 });
     }
 
-    return NextResponse.json(table);
+    // Fetch game results for the active session
+    const activeSession = table.sessions[0] ?? null;
+    const gameResults = activeSession
+      ? await prisma.gameResult.findMany({
+          where:   { sessionId: activeSession.id, restaurantId },
+          orderBy: { createdAt: "asc" },
+          select:  {
+            id:          true,
+            gameType:    true,
+            prize:       true,
+            discountPct: true,
+            won:         true,
+            createdAt:   true,
+          },
+        })
+      : [];
+
+    return NextResponse.json({ ...table, gameResults });
   } catch (error) {
     console.error("[GET /api/tables/[id]]", error);
     return NextResponse.json({ error: "Failed to fetch table." }, { status: 500 });

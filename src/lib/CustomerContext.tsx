@@ -55,6 +55,7 @@ export interface CustomerContextValue {
   loading: boolean;
   error: string | null;
   tableOccupied: boolean;
+  sessionEnded: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -94,6 +95,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState<string | null>(null);
   const [tableOccupied, setTableOccupied] = useState(false);
+  const [sessionEnded,  setSessionEnded]  = useState(false);
 
   const storeSessionId = useCallback((id: string) => {
     setSessionIdState(id);
@@ -150,9 +152,35 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [restaurantSlug, tableNumber, sessionId]);
 
+  // ── Poll session validity every 10s — detect admin table reset ──────────
+  useEffect(() => {
+    if (!sessionId || sessionEnded) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/sessions?sessionId=${encodeURIComponent(sessionId)}`);
+        if (res.status === 404) {
+          setSessionEnded(true);
+          if (sessionKey) localStorage.removeItem(sessionKey);
+          setSessionIdState(null);
+          return;
+        }
+        if (!res.ok) return; // ignore transient errors
+        const data = await res.json() as { isActive: boolean };
+        if (!data.isActive) {
+          setSessionEnded(true);
+          if (sessionKey) localStorage.removeItem(sessionKey);
+          setSessionIdState(null);
+        }
+      } catch { /* ignore network errors */ }
+    }, 10_000);
+
+    return () => clearInterval(interval);
+  }, [sessionId, sessionEnded, sessionKey]);
+
   return (
     <CustomerContext.Provider
-      value={{ restaurant, table, waiter, sessionId, setSessionId: storeSessionId, loading, error, tableOccupied }}
+      value={{ restaurant, table, waiter, sessionId, setSessionId: storeSessionId, loading, error, tableOccupied, sessionEnded }}
     >
       {children}
     </CustomerContext.Provider>

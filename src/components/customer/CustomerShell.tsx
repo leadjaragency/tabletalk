@@ -40,6 +40,23 @@ function OccupiedScreen() {
   );
 }
 
+function SessionEndedScreen() {
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-cu-bg px-6 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cu-accent/10">
+        <UtensilsCrossed className="h-8 w-8 text-cu-accent" />
+      </div>
+      <div>
+        <p className="font-display text-lg font-semibold text-cu-text">Session Ended</p>
+        <p className="mt-2 text-sm text-cu-text/60 max-w-xs">
+          Your table session has been closed by the staff. Thank you for dining with us!
+        </p>
+      </div>
+      <p className="text-xs text-cu-text/40">Please scan the QR code to start a new session.</p>
+    </div>
+  );
+}
+
 function ErrorScreen({ message }: { message: string }) {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-cu-bg px-6 text-center">
@@ -77,10 +94,11 @@ function ShellInner({
 }) {
   const searchParams      = useSearchParams();
   const restaurantSlug    = searchParams.get("restaurant") ?? "";
-  const { loading, error, tableOccupied } = useCustomer();
+  const { loading, error, tableOccupied, sessionEnded } = useCustomer();
 
   if (loading)       return <LoadingScreen />;
   if (tableOccupied) return <OccupiedScreen />;
+  if (sessionEnded)  return <SessionEndedScreen />;
   if (error)         return <ErrorScreen message={error} />;
 
   return (

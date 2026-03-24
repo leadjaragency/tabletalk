@@ -122,6 +122,7 @@ export async function GET(req: Request) {
       select: {
         gamePlayUsed: true,
         discount:     true,
+        endedAt:      true,
         orders:       { select: { id: true }, take: 1 },
       },
     });
@@ -134,6 +135,7 @@ export async function GET(req: Request) {
       gamePlayUsed: session.gamePlayUsed,
       discount:     session.discount,
       hasOrders:    session.orders.length > 0,
+      isActive:     session.endedAt === null,
     });
   } catch (error) {
     console.error("[GET /api/sessions]", error);

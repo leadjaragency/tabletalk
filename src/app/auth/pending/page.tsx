@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Clock, Mail, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
+import { Clock, Mail } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Static page — no auth, no interactivity needed
@@ -19,8 +20,13 @@ export default function PendingPage() {
 
         {/* ── Status icon ──────────────────────────────────────────────── */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-cu-accent/10 ring-2 ring-cu-accent/20">
-            <Clock className="h-9 w-9 text-cu-accent" strokeWidth={1.5} />
+          <div className="flex justify-center mb-5">
+            <div className="relative h-12 w-56 rounded-xl bg-[#1B2A4A] overflow-hidden">
+              <Image src="/photos/logo.png" alt="ServeMyTable" fill className="object-contain p-[6px]" priority sizes="224px" />
+            </div>
+          </div>
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-cu-accent/10 ring-2 ring-cu-accent/20">
+            <Clock className="h-7 w-7 text-cu-accent" strokeWidth={1.5} />
           </div>
           <h1 className="font-display text-2xl font-bold text-cu-text tracking-tight">
             Application received!

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, UtensilsCrossed } from "lucide-react";
+import Image from "next/image";
+import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -18,38 +19,36 @@ export default function Navbar() {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
         isScrolled
-          ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-[#E8DFD0]"
+          ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-[#F0E8D6]"
           : "bg-transparent"
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#1B2A4A] flex items-center justify-center">
-              <UtensilsCrossed className="w-4 h-4 text-[#C6A34E]" />
+          <Link href="/" className="flex items-center shrink-0">
+            <div className="relative h-10 w-[168px] rounded-lg bg-[#1B2A4A] overflow-hidden">
+              <Image
+                src="/photos/logo.png"
+                alt="ServeMyTable — TAP . ORDER . ENJOY"
+                fill
+                className="object-contain p-[5px]"
+                priority
+                sizes="168px"
+              />
             </div>
-            <span className="font-display text-xl text-[#1B2A4A] tracking-wide">ServeMyTable</span>
           </Link>
 
           {/* Desktop nav links */}
           <div className="hidden md:flex items-center gap-8">
-            <a
-              href="#features"
-              className="text-sm text-[#8B7355] hover:text-[#2D1B0E] transition-colors"
-            >
+            <a href="#features" className="text-sm text-[#8B7355] hover:text-[#1B2A4A] transition-colors font-medium">
               Features
             </a>
-            <a
-              href="#how-it-works"
-              className="text-sm text-[#8B7355] hover:text-[#2D1B0E] transition-colors"
-            >
+            <a href="#how-it-works" className="text-sm text-[#8B7355] hover:text-[#1B2A4A] transition-colors font-medium">
               How It Works
             </a>
-            <a
-              href="#pricing"
-              className="text-sm text-[#8B7355] hover:text-[#2D1B0E] transition-colors"
-            >
+            <a href="#pricing" className="text-sm text-[#8B7355] hover:text-[#1B2A4A] transition-colors font-medium">
               Pricing
             </a>
           </div>
@@ -58,7 +57,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/auth/login"
-              className="text-sm text-[#8B7355] hover:text-[#2D1B0E] transition-colors px-3 py-2"
+              className="text-sm text-[#8B7355] hover:text-[#1B2A4A] transition-colors px-3 py-2 font-medium"
             >
               Log in
             </Link>
@@ -73,7 +72,7 @@ export default function Navbar() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-lg text-[#2D1B0E] hover:bg-[#E8DFD0] transition-colors"
+            className="md:hidden p-2 rounded-lg text-[#1B2A4A] hover:bg-[#F0E8D6] transition-colors"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -82,38 +81,23 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-[#E8DFD0] bg-white py-4 flex flex-col gap-1">
-            <a
-              href="#features"
-              onClick={() => setMobileOpen(false)}
-              className="px-4 py-2 text-sm text-[#2D1B0E] hover:bg-[#FDFBF7] rounded-lg"
-            >
+          <div className="md:hidden border-t border-[#F0E8D6] bg-white/98 backdrop-blur-md py-4 flex flex-col gap-1">
+            <a href="#features" onClick={() => setMobileOpen(false)} className="px-4 py-2.5 text-sm font-medium text-[#1B2A4A] hover:bg-[#FAF6ED] rounded-lg">
               Features
             </a>
-            <a
-              href="#how-it-works"
-              onClick={() => setMobileOpen(false)}
-              className="px-4 py-2 text-sm text-[#2D1B0E] hover:bg-[#FDFBF7] rounded-lg"
-            >
+            <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="px-4 py-2.5 text-sm font-medium text-[#1B2A4A] hover:bg-[#FAF6ED] rounded-lg">
               How It Works
             </a>
-            <a
-              href="#pricing"
-              onClick={() => setMobileOpen(false)}
-              className="px-4 py-2 text-sm text-[#2D1B0E] hover:bg-[#FDFBF7] rounded-lg"
-            >
+            <a href="#pricing" onClick={() => setMobileOpen(false)} className="px-4 py-2.5 text-sm font-medium text-[#1B2A4A] hover:bg-[#FAF6ED] rounded-lg">
               Pricing
             </a>
-            <div className="mt-3 pt-3 border-t border-[#E8DFD0] flex flex-col gap-2 px-4">
-              <Link
-                href="/auth/login"
-                className="py-2 text-sm text-center text-[#8B7355] hover:text-[#2D1B0E]"
-              >
+            <div className="mt-3 pt-3 border-t border-[#F0E8D6] flex flex-col gap-2 px-4">
+              <Link href="/auth/login" className="py-2.5 text-sm text-center text-[#8B7355] hover:text-[#1B2A4A] font-medium">
                 Log in
               </Link>
               <Link
                 href="/auth/signup"
-                className="inline-flex items-center justify-center h-10 px-4 text-sm font-semibold rounded-lg bg-[#C6A34E] text-[#1B2A4A] hover:bg-[#A8873A] hover:text-white transition-colors"
+                className="inline-flex items-center justify-center h-11 px-4 text-sm font-semibold rounded-lg bg-[#C6A34E] text-[#1B2A4A] hover:bg-[#A8873A] hover:text-white transition-colors"
               >
                 Get Started Free
               </Link>

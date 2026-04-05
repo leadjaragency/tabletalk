@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UtensilsCrossed } from "lucide-react";
+import Image from "next/image";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -69,16 +69,17 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-fade-in">
 
         {/* ── Branding ─────────────────────────────────────────────────── */}
-        <div className="mb-10 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-cu-accent/10 ring-1 ring-cu-accent/20">
-            <UtensilsCrossed className="h-7 w-7 text-cu-accent" strokeWidth={1.5} />
+        <div className="mb-10 flex justify-center">
+          <div className="relative h-12 w-56 rounded-xl bg-[#1B2A4A] overflow-hidden">
+            <Image
+              src="/photos/logo.png"
+              alt="ServeMyTable — TAP . ORDER . ENJOY"
+              fill
+              className="object-contain p-[6px]"
+              priority
+              sizes="224px"
+            />
           </div>
-          <h1 className="font-display text-3xl text-cu-text tracking-wide">
-            ServeMyTable
-          </h1>
-          <p className="mt-1 text-[10px] font-semibold tracking-[3px] text-cu-accent uppercase">
-            TAP . ORDER . ENJOY
-          </p>
         </div>
 
         {/* ── Card ─────────────────────────────────────────────────────── */}

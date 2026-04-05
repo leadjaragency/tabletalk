@@ -70,16 +70,15 @@ export default function LoginPage() {
 
         {/* ── Branding ─────────────────────────────────────────────────── */}
         <div className="mb-10 flex justify-center">
-          <div className="relative h-12 w-56 rounded-xl bg-[#1B2A4A] overflow-hidden">
-            <Image
-              src="/photos/logo.png"
-              alt="ServeMyTable — TAP . ORDER . ENJOY"
-              fill
-              className="object-contain p-[6px]"
-              priority
-              sizes="224px"
-            />
-          </div>
+          <Image
+            src="/photos/logo-trimmed.png"
+            alt="ServeMyTable — TAP . ORDER . ENJOY"
+            width={240}
+            height={62}
+            className="h-14 w-auto object-contain"
+            priority
+            sizes="240px"
+          />
         </div>
 
         {/* ── Card ─────────────────────────────────────────────────────── */}

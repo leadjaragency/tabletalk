@@ -21,9 +21,15 @@ export default function PendingPage() {
         {/* ── Status icon ──────────────────────────────────────────────── */}
         <div className="mb-8 text-center">
           <div className="flex justify-center mb-5">
-            <div className="relative h-12 w-56 rounded-xl bg-[#1B2A4A] overflow-hidden">
-              <Image src="/photos/logo.png" alt="ServeMyTable" fill className="object-contain p-[6px]" priority sizes="224px" />
-            </div>
+            <Image
+              src="/photos/logo-trimmed.png"
+              alt="ServeMyTable — TAP . ORDER . ENJOY"
+              width={240}
+              height={62}
+              className="h-14 w-auto object-contain"
+              priority
+              sizes="240px"
+            />
           </div>
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-cu-accent/10 ring-2 ring-cu-accent/20">
             <Clock className="h-7 w-7 text-cu-accent" strokeWidth={1.5} />

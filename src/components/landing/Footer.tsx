@@ -9,16 +9,14 @@ export default function Footer() {
 
           {/* Brand column */}
           <div className="lg:col-span-2">
-            {/* Logo — mix-blend-mode: screen makes the black bg transparent on navy */}
-            <div className="relative h-11 w-[190px] mb-4" style={{ mixBlendMode: "screen" }}>
-              <Image
-                src="/photos/logo.png"
-                alt="ServeMyTable — TAP . ORDER . ENJOY"
-                fill
-                className="object-contain object-left"
-                sizes="190px"
-              />
-            </div>
+            <Image
+              src="/photos/logo-trimmed.png"
+              alt="ServeMyTable — TAP . ORDER . ENJOY"
+              width={220}
+              height={57}
+              className="h-12 w-auto object-contain mb-4"
+              sizes="220px"
+            />
             <p className="text-white/60 text-sm max-w-xs leading-relaxed mb-4">
               AI-powered virtual waiters for restaurants. From QR scan to Google review — we handle it all.
             </p>

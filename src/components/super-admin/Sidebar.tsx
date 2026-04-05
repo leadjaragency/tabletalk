@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
@@ -11,7 +12,6 @@ import {
   Activity,
   TrendingUp,
   Settings,
-  UtensilsCrossed,
   Menu,
   X,
   LogOut,
@@ -66,15 +66,18 @@ export function SuperAdminSidebar({ pendingCount, adminName }: SuperAdminSidebar
   const content = (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-14 items-center gap-3 border-b border-sa-border px-5 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sa-accent/15 shrink-0">
-          <UtensilsCrossed className="h-4 w-4 text-sa-accent" />
-        </div>
-        <div className="min-w-0">
-          <p className="font-display text-sm text-sa-accent leading-none truncate tracking-wide">
-            ServeMyTable
-          </p>
-          <p className="text-[10px] text-sa-muted mt-0.5 uppercase tracking-widest">
+      <div className="flex h-16 items-center border-b border-sa-border px-4 shrink-0">
+        <div className="flex flex-col gap-1 min-w-0">
+          <Image
+            src="/photos/logo-trimmed.png"
+            alt="ServeMyTable"
+            width={180}
+            height={47}
+            className="h-10 w-auto object-contain object-left"
+            priority
+            sizes="180px"
+          />
+          <p className="text-[9px] text-sa-muted uppercase tracking-widest pl-0.5">
             Super Admin
           </p>
         </div>

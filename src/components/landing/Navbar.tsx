@@ -28,16 +28,15 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center shrink-0">
-            <div className="relative h-10 w-[168px] rounded-lg bg-[#1B2A4A] overflow-hidden">
-              <Image
-                src="/photos/logo.png"
-                alt="ServeMyTable — TAP . ORDER . ENJOY"
-                fill
-                className="object-contain p-[5px]"
-                priority
-                sizes="168px"
-              />
-            </div>
+            <Image
+              src="/photos/logo-trimmed.png"
+              alt="ServeMyTable — TAP . ORDER . ENJOY"
+              width={210}
+              height={54}
+              className="h-11 w-auto object-contain"
+              priority
+              sizes="210px"
+            />
           </Link>
 
           {/* Desktop nav links */}

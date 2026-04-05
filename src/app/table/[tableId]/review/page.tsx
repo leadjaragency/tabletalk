@@ -67,10 +67,10 @@ export default function ReviewPage() {
           )}
         </div>
 
-        {/* TableTalk branding */}
+        {/* ServeMyTable branding */}
         <div className="mt-6 pt-6 border-t border-cu-border w-full max-w-xs">
           <p className="text-xs text-cu-text/30 text-center">
-            Powered by <span className="font-semibold text-cu-accent/60">TableTalk</span> · AI Virtual Waiter
+            Powered by <span className="font-semibold text-cu-accent/80">ServeMyTable</span> · AI Virtual Waiter
           </p>
         </div>
       </div>

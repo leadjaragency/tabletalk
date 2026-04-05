@@ -49,10 +49,10 @@ export default function FeaturesSection() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-14">
-          <p className="text-sm font-semibold text-[#D4740E] uppercase tracking-wider mb-3">
+          <p className="text-sm font-semibold text-[#C6A34E] uppercase tracking-wider mb-3">
             Features
           </p>
-          <h2 className="font-display text-3xl md:text-4xl text-[#2D1B0E] mb-4">
+          <h2 className="font-display text-3xl md:text-4xl text-[#1B2A4A] mb-4">
             Everything your restaurant needs
           </h2>
           <p className="text-[#8B7355] text-lg max-w-2xl mx-auto">
@@ -66,7 +66,7 @@ export default function FeaturesSection() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="group p-6 rounded-2xl border border-[#E8DFD0] hover:shadow-md hover:border-[#D4740E]/30 transition-all duration-200"
+              className="group p-6 rounded-2xl border border-[#E8DFD0] hover:shadow-md hover:border-[#C6A34E]/30 transition-all duration-200"
             >
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
@@ -74,7 +74,7 @@ export default function FeaturesSection() {
               >
                 {feature.emoji}
               </div>
-              <h3 className="font-display text-lg text-[#2D1B0E] mb-2">{feature.title}</h3>
+              <h3 className="font-display text-lg text-[#1B2A4A] mb-2">{feature.title}</h3>
               <p className="text-sm text-[#8B7355] leading-relaxed">{feature.description}</p>
             </div>
           ))}

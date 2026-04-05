@@ -26,10 +26,10 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#D4740E] flex items-center justify-center">
-              <UtensilsCrossed className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-[#1B2A4A] flex items-center justify-center">
+              <UtensilsCrossed className="w-4 h-4 text-[#C6A34E]" />
             </div>
-            <span className="font-display font-bold text-xl text-[#2D1B0E]">TableTalk</span>
+            <span className="font-display text-xl text-[#1B2A4A] tracking-wide">ServeMyTable</span>
           </Link>
 
           {/* Desktop nav links */}
@@ -64,7 +64,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/auth/signup"
-              className="inline-flex items-center h-9 px-4 text-sm font-semibold rounded-lg bg-[#D4740E] text-white hover:bg-[#B85C0A] transition-colors shadow-sm"
+              className="inline-flex items-center h-9 px-4 text-sm font-semibold rounded-lg bg-[#C6A34E] text-[#1B2A4A] hover:bg-[#A8873A] hover:text-white transition-colors shadow-sm"
             >
               Get Started Free
             </Link>
@@ -113,7 +113,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/auth/signup"
-                className="inline-flex items-center justify-center h-10 px-4 text-sm font-semibold rounded-lg bg-[#D4740E] text-white hover:bg-[#B85C0A] transition-colors"
+                className="inline-flex items-center justify-center h-10 px-4 text-sm font-semibold rounded-lg bg-[#C6A34E] text-[#1B2A4A] hover:bg-[#A8873A] hover:text-white transition-colors"
               >
                 Get Started Free
               </Link>

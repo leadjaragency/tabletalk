@@ -3,20 +3,27 @@ import { UtensilsCrossed } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#2D1B0E] text-white py-12">
+    <footer className="bg-[#1B2A4A] text-white py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-8 border-b border-white/10">
           {/* Brand column */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-[#D4740E] flex items-center justify-center">
-                <UtensilsCrossed className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-[#C6A34E] flex items-center justify-center">
+                <UtensilsCrossed className="w-4 h-4 text-[#1B2A4A]" />
               </div>
-              <span className="font-display font-bold text-xl">TableTalk</span>
+              <div>
+                <span className="font-display text-xl text-[#C6A34E] tracking-wide">ServeMyTable</span>
+                <p className="text-[9px] font-semibold tracking-[3px] text-white/50 uppercase mt-0.5">TAP . ORDER . ENJOY</p>
+              </div>
             </div>
             <p className="text-white/60 text-sm max-w-xs leading-relaxed">
-              AI-powered virtual waiters for restaurants. QR code dining, reimagined.
+              AI-powered virtual waiters for restaurants. From QR scan to Google review.
             </p>
+            <div className="mt-4 text-xs text-white/40 space-y-0.5">
+              <p>hello@servemytable.com</p>
+              <p>servemytable.com · Calgary, AB, Canada</p>
+            </div>
           </div>
 
           {/* Product links */}
@@ -71,7 +78,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-white/40">
-          <span>© 2025 TableTalk. All rights reserved.</span>
+          <span>© 2026 ServeMyTable. All rights reserved. Powered by <a href="https://leadjar.ca" className="hover:text-white/70 transition-colors">LeadJar Agency</a>.</span>
           <div className="flex gap-5">
             <a href="#" className="hover:text-white/70 transition-colors">
               Privacy Policy

@@ -73,11 +73,11 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-cu-accent/10 ring-1 ring-cu-accent/20">
             <UtensilsCrossed className="h-7 w-7 text-cu-accent" strokeWidth={1.5} />
           </div>
-          <h1 className="font-display text-3xl font-bold text-cu-text tracking-tight">
-            TableTalk
+          <h1 className="font-display text-3xl text-cu-text tracking-wide">
+            ServeMyTable
           </h1>
-          <p className="mt-1.5 text-sm text-cu-muted">
-            AI-powered waiter for every table
+          <p className="mt-1 text-[10px] font-semibold tracking-[3px] text-cu-accent uppercase">
+            TAP . ORDER . ENJOY
           </p>
         </div>
 

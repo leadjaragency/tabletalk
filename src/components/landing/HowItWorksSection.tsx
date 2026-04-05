@@ -28,10 +28,10 @@ export default function HowItWorksSection() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-16">
-          <p className="text-sm font-semibold text-[#D4740E] uppercase tracking-wider mb-3">
+          <p className="text-sm font-semibold text-[#C6A34E] uppercase tracking-wider mb-3">
             How It Works
           </p>
-          <h2 className="font-display text-3xl md:text-4xl text-[#2D1B0E] mb-4">
+          <h2 className="font-display text-3xl md:text-4xl text-[#1B2A4A] mb-4">
             Up and running in 30 minutes
           </h2>
           <p className="text-[#8B7355] text-lg max-w-xl mx-auto">
@@ -54,10 +54,10 @@ export default function HowItWorksSection() {
               {/* Icon + number */}
               <div className="relative z-10 w-20 h-20 rounded-2xl bg-white border-2 border-[#E8DFD0] flex flex-col items-center justify-center mb-6 shadow-sm">
                 <span className="text-2xl">{step.emoji}</span>
-                <span className="text-[10px] font-bold text-[#D4740E] mt-0.5">{step.number}</span>
+                <span className="text-[10px] font-bold text-[#C6A34E] mt-0.5">{step.number}</span>
               </div>
 
-              <h3 className="font-display text-xl text-[#2D1B0E] mb-3">{step.title}</h3>
+              <h3 className="font-display text-xl text-[#1B2A4A] mb-3">{step.title}</h3>
               <p className="text-sm text-[#8B7355] leading-relaxed max-w-xs">{step.description}</p>
             </div>
           ))}

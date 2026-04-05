@@ -34,7 +34,7 @@ function statusBadge(status: string) {
 
 const FLOW_STAGES = [
   { icon: "📱", label: "Customer Orders",  desc: "Via QR chat or menu" },
-  { icon: "📬", label: "Order Received",   desc: "Saved to TableTalk DB" },
+  { icon: "📬", label: "Order Received",   desc: "Saved to ServeMyTable DB" },
   { icon: "🔄", label: "POS Sync",         desc: "Forwarded to POS" },
   { icon: "👨‍🍳", label: "Kitchen",          desc: "Prepared by staff" },
   { icon: "🍽️", label: "Served",           desc: "Delivered to table" },

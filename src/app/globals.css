@@ -6,39 +6,48 @@
    ============================================================ */
 @theme {
   /* ── Fonts ─────────────────────────────────────────────── */
-  --font-display: var(--font-sora), "system-ui", sans-serif;
-  --font-sans: var(--font-nunito-sans), "system-ui", sans-serif;
+  --font-display: var(--font-bebas-neue), "Impact", sans-serif;
+  --font-sans: var(--font-montserrat), "system-ui", sans-serif;
   --font-mono: var(--font-jetbrains-mono), "Courier New", monospace;
 
-  /* ── Super Admin palette (Dark Slate-Indigo) ────────────── */
+  /* ── Brand palette (ServeMyTable) ───────────────────────── */
+  --color-brand-gold:       #C6A34E;
+  --color-brand-gold-light: #D4B86A;
+  --color-brand-gold-dark:  #A8873A;
+  --color-brand-navy:       #1B2A4A;
+  --color-brand-navy-light: #2A3D66;
+  --color-brand-cream:      #FAF6ED;
+  --color-brand-cream-dark: #F0E8D6;
+
+  /* ── Super Admin palette (Dark Navy-Gold) ───────────────── */
   --color-sa-bg:      #0F172A;
   --color-sa-surface: #1E293B;
-  --color-sa-border:  #334155;
-  --color-sa-accent:  #6366F1;
-  --color-sa-accent-hover: #4F46E5;
+  --color-sa-border:  #2A3D66;
+  --color-sa-accent:  #C6A34E;
+  --color-sa-accent-hover: #A8873A;
   --color-sa-text:    #F8FAFC;
   --color-sa-muted:   #94A3B8;
 
-  /* ── Restaurant Admin palette (Dark Warm-Amber) ─────────── */
+  /* ── Restaurant Admin palette (Dark Navy-Gold) ──────────── */
   --color-ra-bg:      #0C0A09;
   --color-ra-surface: #1C1917;
   --color-ra-border:  #44403C;
-  --color-ra-accent:  #F59E0B;
-  --color-ra-accent-hover: #D97706;
+  --color-ra-accent:  #C6A34E;
+  --color-ra-accent-hover: #A8873A;
   --color-ra-text:    #FAFAF9;
   --color-ra-muted:   #A8A29E;
 
-  /* ── Customer palette (Light Warm-Cream) ────────────────── */
-  --color-cu-bg:      #FDFBF7;
+  /* ── Customer palette (Light Cream-Gold-Navy) ───────────── */
+  --color-cu-bg:      #FAF6ED;
   --color-cu-surface: #FFFFFF;
-  --color-cu-accent:  #D4740E;
-  --color-cu-accent-hover: #B85C0A;
-  --color-cu-maroon:  #8B1A2B;
-  --color-cu-green:   #1B8C3A;
-  --color-cu-red:     #D63B3B;
-  --color-cu-text:    #2D1B0E;
+  --color-cu-accent:  #C6A34E;
+  --color-cu-accent-hover: #A8873A;
+  --color-cu-maroon:  #1B2A4A;
+  --color-cu-green:   #2D8A56;
+  --color-cu-red:     #C04525;
+  --color-cu-text:    #1B2A4A;
   --color-cu-muted:   #8B7355;
-  --color-cu-border:  #E8DFD0;
+  --color-cu-border:  #F0E8D6;
 
   /* ── Shared semantic ────────────────────────────────────── */
   --color-success: #22C55E;

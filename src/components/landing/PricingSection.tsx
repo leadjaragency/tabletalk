@@ -47,10 +47,10 @@ export default function PricingSection() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-14">
-          <p className="text-sm font-semibold text-[#D4740E] uppercase tracking-wider mb-3">
+          <p className="text-sm font-semibold text-[#C6A34E] uppercase tracking-wider mb-3">
             Pricing
           </p>
-          <h2 className="font-display text-3xl md:text-4xl text-[#2D1B0E] mb-4">
+          <h2 className="font-display text-3xl md:text-4xl text-[#1B2A4A] mb-4">
             Simple, transparent pricing
           </h2>
           <p className="text-[#8B7355] text-lg">
@@ -65,22 +65,22 @@ export default function PricingSection() {
               key={tier.name}
               className={`relative rounded-2xl p-8 border-2 transition-shadow ${
                 tier.popular
-                  ? "border-[#D4740E] shadow-xl shadow-[#D4740E]/10"
+                  ? "border-[#C6A34E] shadow-xl shadow-[#C6A34E]/10"
                   : "border-[#E8DFD0] hover:shadow-md"
               }`}
             >
               {/* Popular badge */}
               {tier.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#D4740E] text-white text-xs font-bold rounded-full whitespace-nowrap">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#C6A34E] text-[#1B2A4A] text-xs font-bold rounded-full whitespace-nowrap">
                   Most Popular
                 </div>
               )}
 
               {/* Tier name + price */}
               <div className="mb-6">
-                <h3 className="font-display text-xl text-[#2D1B0E] mb-2">{tier.name}</h3>
+                <h3 className="font-display text-xl text-[#1B2A4A] mb-2">{tier.name}</h3>
                 <div className="flex items-end gap-1">
-                  <span className="font-display text-4xl font-bold text-[#2D1B0E]">
+                  <span className="font-display text-4xl font-bold text-[#1B2A4A]">
                     ${tier.price}
                   </span>
                   <span className="text-[#8B7355] pb-1 text-sm">/month</span>
@@ -90,8 +90,8 @@ export default function PricingSection() {
               {/* Limits */}
               <div className="space-y-2 mb-6 pb-6 border-b border-[#E8DFD0]">
                 {tier.limits.map((limit) => (
-                  <div key={limit} className="flex items-center gap-2 text-sm text-[#2D1B0E]">
-                    <span className="text-[#D4740E] font-bold">✓</span>
+                  <div key={limit} className="flex items-center gap-2 text-sm text-[#1B2A4A]">
+                    <span className="text-[#C6A34E] font-bold">✓</span>
                     {limit}
                   </div>
                 ))}
@@ -112,8 +112,8 @@ export default function PricingSection() {
                 href="/auth/signup"
                 className={`block w-full text-center py-3 rounded-xl font-semibold text-sm transition-colors ${
                   tier.popular
-                    ? "bg-[#D4740E] text-white hover:bg-[#B85C0A]"
-                    : "border border-[#E8DFD0] text-[#2D1B0E] hover:bg-[#FDFBF7]"
+                    ? "bg-[#C6A34E] text-[#1B2A4A] hover:bg-[#A8873A] hover:text-white"
+                    : "border border-[#E8DFD0] text-[#1B2A4A] hover:bg-[#FDFBF7]"
                 }`}
               >
                 Get Started

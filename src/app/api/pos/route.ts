@@ -43,7 +43,7 @@ export async function GET() {
       syncedToday,
       unsyncedCount,
       recentOrders: JSON.parse(JSON.stringify(recentOrders)),
-      provider:     "TableTalk POS (Demo)",
+      provider:     "ServeMyTable POS (Demo)",
       lastSync:     new Date().toISOString(),
     });
   } catch (err) {

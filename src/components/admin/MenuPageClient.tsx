@@ -266,7 +266,7 @@ function UploadMenuModal({
             </p>
             <a
               href="/api/menu/csv-template"
-              download="tabletalk-menu-template.csv"
+              download="servemytable-menu-template.csv"
               className="shrink-0 flex items-center gap-1.5 rounded-lg border border-ra-accent/40 px-3 py-1.5 text-xs font-medium text-ra-accent hover:bg-ra-accent/10 transition-colors"
             >
               <FileText className="h-3.5 w-3.5" />

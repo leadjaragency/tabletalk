@@ -71,8 +71,8 @@ export function SuperAdminSidebar({ pendingCount, adminName }: SuperAdminSidebar
           <UtensilsCrossed className="h-4 w-4 text-sa-accent" />
         </div>
         <div className="min-w-0">
-          <p className="font-display text-sm font-bold text-sa-text leading-none truncate">
-            TableTalk
+          <p className="font-display text-sm text-sa-accent leading-none truncate tracking-wide">
+            ServeMyTable
           </p>
           <p className="text-[10px] text-sa-muted mt-0.5 uppercase tracking-widest">
             Super Admin

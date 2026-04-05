@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Shared TypeScript types for TableTalk
+// Shared TypeScript types for ServeMyTable
 // ---------------------------------------------------------------------------
 
 export type UserRole =

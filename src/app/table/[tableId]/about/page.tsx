@@ -154,7 +154,7 @@ export default function AboutPage() {
         {/* Footer branding */}
         <div className="py-4 text-center">
           <p className="text-xs text-cu-text/30">
-            Powered by <span className="font-semibold text-cu-accent/60">TableTalk</span> · AI Virtual Waiter
+            Powered by <span className="font-semibold text-cu-accent/80">ServeMyTable</span> · AI Virtual Waiter
           </p>
         </div>
       </div>

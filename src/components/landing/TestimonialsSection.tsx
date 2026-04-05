@@ -31,11 +31,11 @@ export default function TestimonialsSection() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-14">
-          <p className="text-sm font-semibold text-[#D4740E] uppercase tracking-wider mb-3">
+          <p className="text-sm font-semibold text-[#C6A34E] uppercase tracking-wider mb-3">
             Testimonials
           </p>
-          <h2 className="font-display text-3xl md:text-4xl text-[#2D1B0E] mb-4">
-            Restaurants love TableTalk
+          <h2 className="font-display text-3xl md:text-4xl text-[#1B2A4A] mb-4">
+            Restaurants love ServeMyTable
           </h2>
           <p className="text-[#8B7355] text-lg">
             Hear from owners who transformed their dining experience.
@@ -59,7 +59,7 @@ export default function TestimonialsSection() {
               </div>
 
               {/* Quote */}
-              <p className="text-[#2D1B0E] text-sm leading-relaxed mb-6 italic flex-1">
+              <p className="text-[#1B2A4A] text-sm leading-relaxed mb-6 italic flex-1">
                 &ldquo;{t.quote}&rdquo;
               </p>
 
@@ -69,7 +69,7 @@ export default function TestimonialsSection() {
                   {t.avatar}
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-[#2D1B0E]">{t.name}</div>
+                  <div className="text-sm font-semibold text-[#1B2A4A]">{t.name}</div>
                   <div className="text-xs text-[#8B7355]">{t.restaurant}</div>
                 </div>
               </div>

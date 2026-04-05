@@ -189,7 +189,7 @@ export default function AdminSettingsPage() {
           Contact platform support to reset data or deactivate your account. These actions cannot be undone.
         </p>
         <button
-          onClick={() => alert("Contact support at admin@tabletalk.com to reset restaurant data.")}
+          onClick={() => alert("Contact support at hello@servemytable.com to reset restaurant data.")}
           className="rounded-xl border border-red-500/30 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
         >
           Reset Restaurant Data

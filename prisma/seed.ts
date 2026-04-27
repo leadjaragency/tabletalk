@@ -138,14 +138,14 @@ async function main() {
   console.log("👑  Creating super admin...");
   await prisma.user.create({
     data: {
-      email: "admin@tabletalk.com",
-      passwordHash: await bcrypt.hash("tabletalk2024", 12),
+      email: "superadmin@servemytable.ca",
+      passwordHash: await bcrypt.hash("Naman2019@", 12),
       name: "Platform Admin",
       role: "super_admin",
       isActive: true,
     },
   });
-  console.log("   ✓ admin@tabletalk.com\n");
+  console.log("   ✓ superadmin@servemytable.ca\n");
 
   // ─── 4. Demo Restaurant: Saffron Palace ───────────────────────────────────
   console.log("🍛  Creating Saffron Palace...");
@@ -978,7 +978,7 @@ async function main() {
 
   // ─── Done ─────────────────────────────────────────────────────────────────
   console.log("✅  Seed complete!\n");
-  console.log("   Super Admin:       admin@tabletalk.com  /  tabletalk2024");
+  console.log("   Super Admin:       superadmin@servemytable.ca  /  Naman2019@");
   console.log("   Restaurant Owner:  owner@saffronpalace.com  /  saffron2024");
   console.log("   Restaurant slug:   saffron-palace");
   console.log("   Tables:            12  (4×2-seat, 4×4-seat, 3×6-seat, 1×8-seat)");

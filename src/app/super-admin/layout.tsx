@@ -10,18 +10,15 @@ export default async function SuperAdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // ── Auth guard ────────────────────────────────────────────────────────────
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "super_admin") {
     redirect("/auth/login");
   }
 
-  // ── Pending count for badge + notification dot ────────────────────────────
   const pendingCount = await prisma.restaurant.count({
     where: { status: "pending" },
   });
 
-  // ── Top-bar date string ───────────────────────────────────────────────────
   const dateStr = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -29,34 +26,51 @@ export default async function SuperAdminLayout({
     year: "numeric",
   });
 
+  const initials = session.user.name
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
-    <div className="zone-super-admin min-h-screen bg-sa-bg">
-      {/* Sidebar (client component — handles mobile toggle + active state) */}
+    <div className="zone-super-admin min-h-screen" style={{ background: "#F8FAFC" }}>
       <SuperAdminSidebar
         pendingCount={pendingCount}
         adminName={session.user.name}
       />
 
-      {/* Main column — offset by sidebar width on desktop */}
       <div className="lg:pl-[260px] flex flex-col min-h-screen">
-        {/* ── Top bar ──────────────────────────────────────────────────────── */}
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-4 border-b border-sa-border bg-sa-bg/80 backdrop-blur-md px-5">
-          {/* Left: spacer for mobile hamburger + title */}
+        {/* Top bar */}
+        <header
+          className="sticky top-0 z-20 flex h-[58px] items-center justify-between gap-4 px-6"
+          style={{
+            background: "#FFFFFF",
+            borderBottom: "1px solid #E2E8F0",
+          }}
+        >
+          {/* Left */}
           <div className="flex items-center gap-4">
             <div className="lg:hidden w-8 shrink-0" aria-hidden />
-            <span className="font-display text-base font-semibold text-sa-text">
+            <span
+              className="text-xs font-semibold uppercase tracking-widest"
+              style={{ color: "#64748B" }}
+            >
               Super Admin
             </span>
           </div>
 
-          {/* Right: date, notification bell, avatar */}
+          {/* Right: date, bell, avatar */}
           <div className="flex items-center gap-3">
-            <p className="hidden sm:block text-sm text-sa-muted">{dateStr}</p>
+            <p className="hidden sm:block text-xs font-medium" style={{ color: "#94A3B8" }}>
+              {dateStr}
+            </p>
 
-            {/* Notification bell — pings when pending approvals exist */}
+            {/* Notification bell */}
             <a
               href="/super-admin/approvals"
-              className="relative flex h-8 w-8 items-center justify-center rounded-lg text-sa-muted hover:text-sa-text hover:bg-white/5 transition-colors"
+              className="relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-slate-100"
+              style={{ color: "#64748B" }}
               aria-label={
                 pendingCount > 0
                   ? `${pendingCount} pending approval${pendingCount > 1 ? "s" : ""}`
@@ -66,23 +80,29 @@ export default async function SuperAdminLayout({
               <Bell className="h-4 w-4" />
               {pendingCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sa-accent opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-sa-accent" />
+                  <span
+                    className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
+                    style={{ background: "#10B981" }}
+                  />
+                  <span
+                    className="relative inline-flex h-2 w-2 rounded-full"
+                    style={{ background: "#10B981" }}
+                  />
                 </span>
               )}
             </a>
 
-            {/* Admin avatar */}
+            {/* Avatar */}
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-sa-accent/20 text-[11px] font-bold text-sa-accent select-none"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold select-none text-white"
+              style={{ background: "#2563EB" }}
               title={session.user.name}
             >
-              SA
+              {initials}
             </div>
           </div>
         </header>
 
-        {/* ── Page content ─────────────────────────────────────────────────── */}
         <main className="flex-1">{children}</main>
       </div>
     </div>

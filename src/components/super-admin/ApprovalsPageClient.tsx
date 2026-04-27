@@ -94,8 +94,8 @@ function ApproveModal({
               key={t.id}
               className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all ${
                 tierId === t.id
-                  ? "border-sa-accent bg-sa-accent/10"
-                  : "border-sa-border hover:bg-white/5"
+                  ? "border-blue-400 bg-blue-50"
+                  : "border-slate-200 hover:bg-slate-50"
               }`}
             >
               <input

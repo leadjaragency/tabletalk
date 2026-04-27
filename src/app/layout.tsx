@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue, Montserrat, JetBrains_Mono } from "next/font/google";
+import { Bebas_Neue, Montserrat, JetBrains_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
 const bebasNeue = Bebas_Neue({
@@ -21,6 +21,13 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   display: "swap",
   weight: ["400", "500", "700"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -56,7 +63,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${bebasNeue.variable} ${montserrat.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${bebasNeue.variable} ${montserrat.variable} ${jetbrainsMono.variable} ${inter.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

@@ -9,6 +9,7 @@
   --font-display: var(--font-bebas-neue), "Impact", sans-serif;
   --font-sans: var(--font-montserrat), "system-ui", sans-serif;
   --font-mono: var(--font-jetbrains-mono), "Courier New", monospace;
+  --font-jakarta: var(--font-inter), "system-ui", sans-serif;
 
   /* ── Brand palette (ServeMyTable) ───────────────────────── */
   --color-brand-gold:       #C6A34E;
@@ -19,14 +20,17 @@
   --color-brand-cream:      #FAF6ED;
   --color-brand-cream-dark: #F0E8D6;
 
-  /* ── Super Admin palette (Dark Navy-Gold) ───────────────── */
-  --color-sa-bg:      #0F172A;
-  --color-sa-surface: #1E293B;
-  --color-sa-border:  #2A3D66;
-  --color-sa-accent:  #C6A34E;
-  --color-sa-accent-hover: #A8873A;
-  --color-sa-text:    #F8FAFC;
-  --color-sa-muted:   #94A3B8;
+  /* ── Super Admin palette (Classic Blue & White) ────────── */
+  --color-sa-bg:           #F8FAFC;
+  --color-sa-surface:      #FFFFFF;
+  --color-sa-surface2:     #F1F5F9;
+  --color-sa-border:       #E2E8F0;
+  --color-sa-sidebar:      #1E3A5F;
+  --color-sa-accent:       #2563EB;
+  --color-sa-accent-hover: #1D4ED8;
+  --color-sa-success:      #10B981;
+  --color-sa-text:         #0F172A;
+  --color-sa-muted:        #64748B;
 
   /* ── Restaurant Admin palette (Dark Navy-Gold) ──────────── */
   --color-ra-bg:      #0C0A09;
@@ -84,6 +88,7 @@
   --animate-pulse-soft: pulseSoft 2s ease-in-out infinite;
   --animate-spin-slow:  spin 3s linear infinite;
   --animate-bounce-in:  bounceIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-glow-pulse: glowPulse 3s ease-in-out infinite;
 }
 
 /* ============================================================
@@ -152,9 +157,22 @@
 
   /* ── Super Admin zone defaults ─── */
   .zone-super-admin {
-    background-color: #0F172A;
-    color: #F8FAFC;
-    font-family: var(--font-sans);
+    background-color: #F8FAFC;
+    color: #0F172A;
+    --font-sans:    var(--font-inter), "system-ui", sans-serif;
+    --font-display: var(--font-inter), "system-ui", sans-serif;
+    font-family: var(--font-inter), "system-ui", sans-serif;
+  }
+  .zone-super-admin h1,
+  .zone-super-admin h2,
+  .zone-super-admin h3,
+  .zone-super-admin h4,
+  .zone-super-admin h5,
+  .zone-super-admin h6 {
+    font-family: var(--font-inter), "system-ui", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
   }
 
   /* ── Restaurant Admin zone defaults ─── */
@@ -217,11 +235,11 @@
     background: transparent;
   }
   .zone-super-admin ::-webkit-scrollbar-thumb {
-    background: #334155;
+    background: #CBD5E1;
     border-radius: 9999px;
   }
   .zone-super-admin ::-webkit-scrollbar-thumb:hover {
-    background: #475569;
+    background: #94A3B8;
   }
   .zone-admin ::-webkit-scrollbar-thumb {
     background: #44403C;
@@ -248,7 +266,7 @@
   }
 
   /* Firefox */
-  .zone-super-admin * { scrollbar-color: #334155 transparent; scrollbar-width: thin; }
+  .zone-super-admin * { scrollbar-color: #CBD5E1 transparent; scrollbar-width: thin; }
   .zone-admin *        { scrollbar-color: #44403C transparent; scrollbar-width: thin; }
   .zone-customer *     { scrollbar-color: #C4A882 #F5F0E8;    scrollbar-width: thin; }
 }
@@ -324,4 +342,9 @@
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(124, 58, 237, 0.15); }
+  50%       { box-shadow: 0 0 32px rgba(124, 58, 237, 0.35); }
 }

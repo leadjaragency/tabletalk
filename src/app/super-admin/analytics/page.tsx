@@ -85,16 +85,26 @@ async function getData() {
 function BarChart({ labels, values }: { labels: string[]; values: number[] }) {
   const max = Math.max(...values, 1);
   return (
-    <div className="flex items-end gap-1.5 h-36">
+    <div className="flex items-end gap-2 h-40 pt-2">
       {labels.map((label, i) => {
-        const pct = (values[i] / max) * 100;
+        const pct = Math.max((values[i] / max) * 100, 2);
+        const hasValue = values[i] > 0;
         return (
-          <div key={label} className="flex flex-1 flex-col items-center gap-1">
-            <span className="text-[9px] text-sa-muted leading-none">
-              {values[i] > 0 ? `$${values[i].toFixed(0)}` : ""}
+          <div key={label} className="flex flex-1 flex-col items-center gap-1.5">
+            <span className="text-[10px] font-medium leading-none" style={{ color: "#64748B" }}>
+              {hasValue ? `$${values[i].toFixed(0)}` : ""}
             </span>
-            <div className="w-full rounded-t-md bg-sa-accent/60" style={{ height: `${Math.max(pct, 3)}%` }} />
-            <span className="text-[9px] text-sa-muted">{label}</span>
+            <div
+              className="w-full rounded-t-lg transition-all duration-300"
+              style={{
+                height: `${pct}%`,
+                background: hasValue
+                  ? "linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%)"
+                  : "#F1F5F9",
+                minHeight: "4px",
+              }}
+            />
+            <span className="text-[10px] font-medium" style={{ color: "#94A3B8" }}>{label}</span>
           </div>
         );
       })}
@@ -121,12 +131,12 @@ export default async function SuperAdminAnalyticsPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: "Active",       value: restaurants.active,                                icon: Building2,     color: "bg-emerald-500/15 text-emerald-400" },
-          { label: "Orders Today", value: ordersToday,                                       icon: ShoppingBag,   color: "bg-sa-accent/15 text-sa-accent" },
-          { label: "Revenue Today",value: `$${revenueToday.toFixed(0)}`,                    icon: DollarSign,    color: "bg-blue-500/15 text-blue-400" },
-          { label: "Avg Rating",   value: avgRating > 0 ? avgRating.toFixed(1) : "—",      icon: Star,          color: "bg-amber-500/15 text-amber-400" },
-          { label: "AI Chats",     value: aiChatsToday,                                      icon: MessageSquare, color: "bg-purple-500/15 text-purple-400" },
-          { label: "Game Wins",    value: gameWinsTotal,                                     icon: Gamepad2,      color: "bg-pink-500/15 text-pink-400" },
+          { label: "Active",       value: restaurants.active,                                icon: Building2,     color: "bg-emerald-50 text-emerald-600" },
+          { label: "Orders Today", value: ordersToday,                                       icon: ShoppingBag,   color: "bg-blue-50 text-blue-600" },
+          { label: "Revenue Today",value: `$${revenueToday.toFixed(0)}`,                    icon: DollarSign,    color: "bg-indigo-50 text-indigo-600" },
+          { label: "Avg Rating",   value: avgRating > 0 ? avgRating.toFixed(1) : "—",      icon: Star,          color: "bg-amber-50 text-amber-600" },
+          { label: "AI Chats",     value: aiChatsToday,                                      icon: MessageSquare, color: "bg-violet-50 text-violet-600" },
+          { label: "Game Wins",    value: gameWinsTotal,                                     icon: Gamepad2,      color: "bg-pink-50 text-pink-600" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="rounded-2xl border border-sa-border bg-sa-surface p-4 space-y-2">
             <div className="flex items-center justify-between">
@@ -178,9 +188,9 @@ export default async function SuperAdminAnalyticsPage() {
               <div key={r.id} className="rounded-xl border border-sa-border bg-sa-bg p-4 space-y-1">
                 <p className="font-medium text-sa-text truncate">{r.name}</p>
                 <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase ${
-                  r.status === "active" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                    : r.status === "pending" ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                    : "border-sa-border text-sa-muted"
+                  r.status === "active" ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : r.status === "pending" ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : "border-slate-200 bg-slate-50 text-slate-500"
                 }`}>
                   {r.status}
                 </span>

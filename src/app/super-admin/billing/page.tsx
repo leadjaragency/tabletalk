@@ -55,11 +55,11 @@ async function getData() {
 
 function statusBadge(status: string) {
   switch (status) {
-    case "active":    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
-    case "pending":   return "border-amber-500/30 bg-amber-500/10 text-amber-400";
-    case "suspended": return "border-red-500/30 bg-red-500/10 text-red-400";
-    case "disabled":  return "border-sa-border bg-sa-surface text-sa-muted";
-    default:          return "border-sa-border bg-sa-surface text-sa-muted";
+    case "active":    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "pending":   return "border-amber-200 bg-amber-50 text-amber-700";
+    case "suspended": return "border-red-200 bg-red-50 text-red-600";
+    case "disabled":  return "border-slate-200 bg-slate-50 text-slate-500";
+    default:          return "border-slate-200 bg-slate-50 text-slate-500";
   }
 }
 
@@ -84,25 +84,25 @@ export default async function BillingPage() {
             value: `$${platformTotal.toFixed(2)}`,
             sub:   "subscriptions + API",
             icon:  DollarSign,
-            color: "bg-sa-accent/15 text-sa-accent",
+            color: "bg-blue-50 text-blue-600",
           },
           {
             label: "Active Restaurants",
             value: rows.filter((r: { status: string }) => r.status === "active").length,
             icon:  CheckCircle2,
-            color: "bg-emerald-500/15 text-emerald-400",
+            color: "bg-emerald-50 text-emerald-600",
           },
           {
             label: "Subscription Revenue",
             value: `$${rows.reduce((s: number, r: { monthlyPrice: number }) => s + r.monthlyPrice, 0).toFixed(2)}`,
             icon:  DollarSign,
-            color: "bg-blue-500/15 text-blue-400",
+            color: "bg-indigo-50 text-indigo-600",
           },
           {
             label: "API Cost This Month",
             value: `$${rows.reduce((s: number, r: { apiCostMonth: number }) => s + r.apiCostMonth, 0).toFixed(4)}`,
             icon:  AlertCircle,
-            color: "bg-purple-500/15 text-purple-400",
+            color: "bg-violet-50 text-violet-600",
           },
         ].map(({ label, value, sub, icon: Icon, color }) => (
           <div key={label} className="rounded-2xl border border-sa-border bg-sa-surface p-5 space-y-3">
@@ -163,7 +163,7 @@ export default async function BillingPage() {
             </thead>
             <tbody className="divide-y divide-sa-border">
               {rows.map((row: { id: string; name: string; slug: string; status: string; tierName: string; monthlyPrice: number; apiCostMonth: number; totalRevenue: number; orderCount: number }) => (
-                <tr key={row.id} className="hover:bg-white/2 transition-colors">
+                <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <Link href={`/super-admin/restaurants/${row.id}`} className="font-medium text-sa-text hover:text-sa-accent transition-colors">
                       {row.name}

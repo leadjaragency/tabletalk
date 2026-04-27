@@ -60,9 +60,8 @@ export default function TrialSection() {
 
               <Link
                 href="/auth/signup"
-                className="mt-8 inline-flex items-center gap-2 h-13 px-8 py-3.5 text-sm font-bold uppercase tracking-widest rounded-xl transition-colors"
+                className="mt-8 inline-flex items-center gap-2 h-13 px-8 py-3.5 text-sm font-bold uppercase tracking-widest rounded-xl transition-colors hover:opacity-90"
                 style={{ background: "#C6A34E", color: "#1B2A4A" }}
-                onMouseEnter={() => {}}
               >
                 Start Your Free Trial
                 <ArrowRight className="w-4 h-4" />

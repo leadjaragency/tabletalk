@@ -22,7 +22,7 @@ export default function Footer() {
             </p>
             <div className="text-xs text-white/40 space-y-1">
               <p>hello@servemytable.com</p>
-              <p>servemytable.com · Calgary, AB, Canada</p>
+              <p>servemytable.com</p>
             </div>
           </div>
 
@@ -32,7 +32,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm text-white/60">
               <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
               <li><a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a></li>
-              <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
+              <li><a href="#trial" className="hover:text-white transition-colors">Free Trial</a></li>
               <li><Link href="/auth/signup" className="hover:text-white transition-colors">Sign Up</Link></li>
             </ul>
           </div>

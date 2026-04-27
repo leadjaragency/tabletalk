@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Smartphone } from "lucide-react";
 
 export default function HeroSection() {
   return (
@@ -19,7 +19,7 @@ export default function HeroSection() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#F0E8D6] bg-white text-sm text-[#8B7355] mb-4 shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-[#C6A34E] shrink-0" />
-              <span>Powered by Claude AI · Calgary, AB</span>
+              <span>14-Day Free Trial · No Credit Card Required</span>
             </div>
 
             {/* Tagline */}
@@ -93,7 +93,9 @@ export default function HeroSection() {
 
               {/* Floating badge — bottom left */}
               <div className="absolute -bottom-4 left-4 sm:-left-4 bg-white rounded-2xl px-3 py-2.5 shadow-xl border border-[#F0E8D6] flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#FAF6ED] flex items-center justify-center text-lg shrink-0">📱</div>
+                <div className="w-9 h-9 rounded-xl bg-[#FAF6ED] flex items-center justify-center shrink-0">
+                  <Smartphone className="w-5 h-5 text-[#C6A34E]" />
+                </div>
                 <div>
                   <div className="font-display text-sm text-[#1B2A4A] leading-none">Zero App</div>
                   <div className="text-[10px] text-[#8B7355] mt-0.5">Just scan & order</div>

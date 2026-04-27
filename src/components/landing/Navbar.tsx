@@ -47,8 +47,8 @@ export default function Navbar() {
             <a href="#how-it-works" className="text-sm text-[#8B7355] hover:text-[#1B2A4A] transition-colors font-medium">
               How It Works
             </a>
-            <a href="#pricing" className="text-sm text-[#8B7355] hover:text-[#1B2A4A] transition-colors font-medium">
-              Pricing
+            <a href="#trial" className="text-sm text-[#8B7355] hover:text-[#1B2A4A] transition-colors font-medium">
+              Free Trial
             </a>
           </div>
 
@@ -87,8 +87,8 @@ export default function Navbar() {
             <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="px-4 py-2.5 text-sm font-medium text-[#1B2A4A] hover:bg-[#FAF6ED] rounded-lg">
               How It Works
             </a>
-            <a href="#pricing" onClick={() => setMobileOpen(false)} className="px-4 py-2.5 text-sm font-medium text-[#1B2A4A] hover:bg-[#FAF6ED] rounded-lg">
-              Pricing
+            <a href="#trial" onClick={() => setMobileOpen(false)} className="px-4 py-2.5 text-sm font-medium text-[#1B2A4A] hover:bg-[#FAF6ED] rounded-lg">
+              Free Trial
             </a>
             <div className="mt-3 pt-3 border-t border-[#F0E8D6] flex flex-col gap-2 px-4">
               <Link href="/auth/login" className="py-2.5 text-sm text-center text-[#8B7355] hover:text-[#1B2A4A] font-medium">

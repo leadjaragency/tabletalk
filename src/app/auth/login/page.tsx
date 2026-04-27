@@ -98,7 +98,7 @@ export default function LoginPage() {
               alt="ServeMyTable"
               width={200}
               height={52}
-              className="h-11 w-auto object-contain object-left brightness-0 invert"
+              className="h-11 w-auto object-contain object-left"
               sizes="200px"
             />
           </div>

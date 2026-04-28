@@ -33,13 +33,13 @@
   --color-sa-muted:        #64748B;
 
   /* ── Restaurant Admin palette (Light — matches Super Admin) */
-  --color-ra-bg:           #F8FAFC;
+  --color-ra-bg:           #F1F5F9;
   --color-ra-surface:      #FFFFFF;
-  --color-ra-border:       #E2E8F0;
+  --color-ra-border:       #CBD5E1;
   --color-ra-accent:       #C6A34E;
   --color-ra-accent-hover: #A8873A;
   --color-ra-text:         #0F172A;
-  --color-ra-muted:        #64748B;
+  --color-ra-muted:        #334155;
 
   /* ── Customer palette (Light Cream-Gold-Navy) ───────────── */
   --color-cu-bg:      #FAF6ED;
@@ -177,7 +177,7 @@
 
   /* ── Restaurant Admin zone defaults ─── */
   .zone-admin {
-    background-color: #F8FAFC;
+    background-color: #F1F5F9;
     color: #0F172A;
     --font-sans:    var(--font-inter), "system-ui", sans-serif;
     --font-display: var(--font-inter), "system-ui", sans-serif;

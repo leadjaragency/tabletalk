@@ -340,10 +340,10 @@ function SidebarContent({
         background: "#1E3A5F",
         // Override ra-* tokens so Tailwind classes render correctly on the dark navy sidebar
         ["--color-ra-text" as string]:   "#FFFFFF",
-        ["--color-ra-muted" as string]:  "rgba(255,255,255,0.55)",
-        ["--color-ra-border" as string]: "rgba(255,255,255,0.1)",
-        ["--color-ra-bg" as string]:     "rgba(255,255,255,0.06)",
-        ["--color-ra-surface" as string]:"rgba(255,255,255,0.08)",
+        ["--color-ra-muted" as string]:  "rgba(255,255,255,0.78)",
+        ["--color-ra-border" as string]: "rgba(255,255,255,0.15)",
+        ["--color-ra-bg" as string]:     "rgba(255,255,255,0.08)",
+        ["--color-ra-surface" as string]:"rgba(255,255,255,0.12)",
       }}
     >
       {/* Logo / Restaurant Name with dropdown */}

@@ -509,7 +509,7 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
           <button
             onClick={handleManualRefresh}
             className={cn(
-              "rounded-lg p-2 text-ra-muted hover:bg-white/5 hover:text-ra-text transition-all",
+              "rounded-lg p-2 text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-all",
               refreshing && "animate-spin text-ra-accent"
             )}
             title="Refresh now"
@@ -539,7 +539,7 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
               "rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all",
               statusFilter === "all"
                 ? "bg-ra-accent text-stone-900"
-                : "text-ra-muted hover:bg-white/5 hover:text-ra-text"
+                : "text-ra-muted hover:bg-slate-100 hover:text-ra-text"
             )}
           >
             All ({orders.length})
@@ -554,7 +554,7 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
                   "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all",
                   statusFilter === s
                     ? cn(cfg.bg, cfg.text, "ring-1", cfg.ring)
-                    : "text-ra-muted hover:bg-white/5 hover:text-ra-text"
+                    : "text-ra-muted hover:bg-slate-100 hover:text-ra-text"
                 )}
               >
                 {cfg.label}

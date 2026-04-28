@@ -32,14 +32,14 @@
   --color-sa-text:         #0F172A;
   --color-sa-muted:        #64748B;
 
-  /* ── Restaurant Admin palette (Dark Navy-Gold) ──────────── */
-  --color-ra-bg:      #0C0A09;
-  --color-ra-surface: #1C1917;
-  --color-ra-border:  #44403C;
-  --color-ra-accent:  #C6A34E;
+  /* ── Restaurant Admin palette (Light — matches Super Admin) */
+  --color-ra-bg:           #F8FAFC;
+  --color-ra-surface:      #FFFFFF;
+  --color-ra-border:       #E2E8F0;
+  --color-ra-accent:       #C6A34E;
   --color-ra-accent-hover: #A8873A;
-  --color-ra-text:    #FAFAF9;
-  --color-ra-muted:   #A8A29E;
+  --color-ra-text:         #0F172A;
+  --color-ra-muted:        #64748B;
 
   /* ── Customer palette (Light Cream-Gold-Navy) ───────────── */
   --color-cu-bg:      #FAF6ED;
@@ -177,9 +177,22 @@
 
   /* ── Restaurant Admin zone defaults ─── */
   .zone-admin {
-    background-color: #0C0A09;
-    color: #FAFAF9;
-    font-family: var(--font-sans);
+    background-color: #F8FAFC;
+    color: #0F172A;
+    --font-sans:    var(--font-inter), "system-ui", sans-serif;
+    --font-display: var(--font-inter), "system-ui", sans-serif;
+    font-family: var(--font-inter), "system-ui", sans-serif;
+  }
+  .zone-admin h1,
+  .zone-admin h2,
+  .zone-admin h3,
+  .zone-admin h4,
+  .zone-admin h5,
+  .zone-admin h6 {
+    font-family: var(--font-inter), "system-ui", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
   }
 
   /* ── Customer zone defaults ─── */
@@ -242,11 +255,11 @@
     background: #94A3B8;
   }
   .zone-admin ::-webkit-scrollbar-thumb {
-    background: #44403C;
+    background: #CBD5E1;
     border-radius: 9999px;
   }
   .zone-admin ::-webkit-scrollbar-thumb:hover {
-    background: #57534E;
+    background: #94A3B8;
   }
 
   /* Light scrollbar (customer) */
@@ -267,7 +280,7 @@
 
   /* Firefox */
   .zone-super-admin * { scrollbar-color: #CBD5E1 transparent; scrollbar-width: thin; }
-  .zone-admin *        { scrollbar-color: #44403C transparent; scrollbar-width: thin; }
+  .zone-admin *        { scrollbar-color: #CBD5E1 transparent; scrollbar-width: thin; }
   .zone-customer *     { scrollbar-color: #C4A882 #F5F0E8;    scrollbar-width: thin; }
 }
 

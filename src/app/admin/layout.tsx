@@ -85,13 +85,16 @@ export default async function AdminLayout({
       {/* Main content — offset for sidebar at each breakpoint */}
       <div className="flex min-h-screen flex-col pl-0 md:pl-[60px] lg:pl-[240px]">
         {/* ── Topbar ──────────────────────────────────────────────────── */}
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-ra-border bg-ra-bg/80 px-4 pl-14 backdrop-blur-md md:pl-6">
+        <header
+          className="sticky top-0 z-20 flex h-[58px] items-center justify-between px-6 pl-14 md:pl-6"
+          style={{ background: "#FFFFFF", borderBottom: "1px solid #E2E8F0" }}
+        >
           {/* Restaurant name (hidden on mobile — hamburger is there instead) */}
           <div className="hidden md:block">
-            <p className="text-sm font-semibold text-ra-text leading-tight">
+            <p className="text-sm font-semibold leading-tight" style={{ color: "#0F172A" }}>
               {restaurant.name}
             </p>
-            <p className="text-xs text-ra-muted leading-tight">Restaurant Admin</p>
+            <p className="text-xs leading-tight" style={{ color: "#64748B" }}>Restaurant Admin</p>
           </div>
           <div className="md:hidden" />
 

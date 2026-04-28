@@ -181,7 +181,7 @@ function RestaurantDropdown({
             <DropdownMenu.Item asChild>
               <Link
                 href="/admin/settings"
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors outline-none cursor-pointer"
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-colors outline-none cursor-pointer"
               >
                 <Settings className="h-4 w-4" />
                 Settings
@@ -190,7 +190,7 @@ function RestaurantDropdown({
             <DropdownMenu.Item asChild>
               <Link
                 href="/admin/analytics"
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors outline-none cursor-pointer"
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-colors outline-none cursor-pointer"
               >
                 <BarChart2 className="h-4 w-4" />
                 Analytics
@@ -278,7 +278,7 @@ function UserFooter({
               <DropdownMenu.Item asChild>
                 <Link
                   href="/admin/settings"
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-white/5 hover:text-ra-text transition-colors outline-none cursor-pointer"
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-colors outline-none cursor-pointer"
                 >
                   <Settings className="h-4 w-4" />
                   Account Settings
@@ -334,7 +334,18 @@ function SidebarContent({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div
+      className="flex h-full flex-col"
+      style={{
+        background: "#1E3A5F",
+        // Override ra-* tokens so Tailwind classes render correctly on the dark navy sidebar
+        ["--color-ra-text" as string]:   "#FFFFFF",
+        ["--color-ra-muted" as string]:  "rgba(255,255,255,0.55)",
+        ["--color-ra-border" as string]: "rgba(255,255,255,0.1)",
+        ["--color-ra-bg" as string]:     "rgba(255,255,255,0.06)",
+        ["--color-ra-surface" as string]:"rgba(255,255,255,0.08)",
+      }}
+    >
       {/* Logo / Restaurant Name with dropdown */}
       <RestaurantDropdown
         restaurantName={restaurantName}
@@ -385,7 +396,8 @@ export function AdminSidebar({
       {/* ── Mobile hamburger trigger ───────────────────────────────────── */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-3.5 z-50 flex h-8 w-8 items-center justify-center rounded-lg bg-ra-surface text-ra-muted hover:text-ra-text md:hidden"
+        className="fixed left-4 top-3.5 z-50 flex h-8 w-8 items-center justify-center rounded-lg md:hidden"
+        style={{ background: "#1E3A5F", color: "#FFFFFF" }}
         aria-label="Open menu"
       >
         <Menu className="h-5 w-5" />
@@ -401,9 +413,10 @@ export function AdminSidebar({
 
       {/* ── Mobile drawer ─────────────────────────────────────────────── */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-[240px] bg-ra-surface transition-transform duration-200 md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-[240px] transition-transform duration-200 md:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        style={{ background: "#1E3A5F" }}
       >
         <SidebarContent
           restaurantName={restaurantName}
@@ -417,7 +430,10 @@ export function AdminSidebar({
       </div>
 
       {/* ── Tablet sidebar (icon-only, 60px) ──────────────────────────── */}
-      <div className="fixed inset-y-0 left-0 z-30 hidden w-[60px] flex-col border-r border-ra-border bg-ra-surface md:flex lg:hidden">
+      <div
+        className="fixed inset-y-0 left-0 z-30 hidden w-[60px] flex-col md:flex lg:hidden"
+        style={{ background: "#1E3A5F", borderRight: "1px solid rgba(255,255,255,0.08)" }}
+      >
         <SidebarContent
           restaurantName={restaurantName}
           pendingOrdersCount={pendingOrdersCount}
@@ -429,7 +445,10 @@ export function AdminSidebar({
       </div>
 
       {/* ── Desktop sidebar (full, 240px) ──────────────────────────────── */}
-      <div className="fixed inset-y-0 left-0 z-30 hidden w-[240px] flex-col border-r border-ra-border bg-ra-surface lg:flex">
+      <div
+        className="fixed inset-y-0 left-0 z-30 hidden w-[240px] flex-col lg:flex"
+        style={{ background: "#1E3A5F", borderRight: "1px solid rgba(255,255,255,0.08)" }}
+      >
         <SidebarContent
           restaurantName={restaurantName}
           pendingOrdersCount={pendingOrdersCount}

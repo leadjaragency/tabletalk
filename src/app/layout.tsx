@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Montserrat, JetBrains_Mono, Inter } from "next/font/google";
+import { MotionConfig } from "framer-motion";
 import "./globals.css";
 
 const bebasNeue = Bebas_Neue({
@@ -64,7 +65,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${bebasNeue.variable} ${montserrat.variable} ${jetbrainsMono.variable} ${inter.variable} font-sans antialiased`}>
-        {children}
+        <MotionConfig reducedMotion="user">
+          {children}
+        </MotionConfig>
       </body>
     </html>
   );

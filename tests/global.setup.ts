@@ -4,7 +4,7 @@
  * 2. Auth state files are then reused by every test via the fixtures in tests/fixtures/auth.ts.
  *
  * The test DB must already be migrated and seeded before running tests.
- * Run from tabletalk/:
+ * Run from servemytable/:
  *   DATABASE_URL=<test-db-url> npx prisma migrate deploy
  *   DATABASE_URL=<test-db-url> tsx prisma/seed.ts
  */

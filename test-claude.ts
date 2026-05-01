@@ -3,7 +3,7 @@ import { streamChat } from './src/lib/anthropic';
 
 // load .env.local
 // the workspace root is one level up so specify path accordingly
-dotenv.config({ path: 'tabletalk/.env.local' });
+dotenv.config({ path: 'servemytable/.env.local' });
 
 async function run() {
   try {

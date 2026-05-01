@@ -1,5 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import { MessageSquare, ShieldCheck, QrCode, Gamepad2, BarChart3, Globe } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import AnimatedSection from "./motion/AnimatedSection";
+import { fadeUp, scaleIn, staggerContainer } from "./motion/MotionConfig";
 
 const features = [
   {
@@ -74,53 +79,89 @@ const proofImages = [
 ];
 
 export default function FeaturesSection() {
+  const prefersReduced = useReducedMotion();
+
   return (
     <section id="features" className="py-20 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Section header */}
-        <div className="text-center mb-14">
-          <p className="text-[11px] font-semibold text-[#C6A34E] uppercase tracking-[3px] mb-3">
-            Features
-          </p>
-          <h2 className="font-display text-4xl md:text-5xl text-[#1B2A4A] mb-4">
-            Everything your restaurant needs
-          </h2>
-          <p className="text-[#8B7355] text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+        <AnimatedSection className="text-center mb-14">
+          <motion.p
+            className="text-[11px] font-semibold text-[#C6A34E] uppercase tracking-[3px] mb-3"
+            variants={prefersReduced ? undefined : fadeUp(0.0)}
+            initial="hidden"
+            animate="visible"
+          >
+            What&apos;s Inside
+          </motion.p>
+          <motion.h2
+            className="font-display text-4xl md:text-5xl text-[#1B2A4A] mb-4"
+            variants={prefersReduced ? undefined : fadeUp(0.1)}
+            initial="hidden"
+            animate="visible"
+          >
+            One Platform. Zero Chaos.
+          </motion.h2>
+          <motion.p
+            className="text-[#8B7355] text-base md:text-lg max-w-2xl mx-auto leading-relaxed"
+            variants={prefersReduced ? undefined : fadeUp(0.2)}
+            initial="hidden"
+            animate="visible"
+          >
             One platform to run your front-of-house — from the moment guests scan the QR code to the final bill.
-          </p>
-        </div>
+          </motion.p>
+        </AnimatedSection>
 
         {/* Feature grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <AnimatedSection
+          variants={prefersReduced ? undefined : staggerContainer(0.08)}
+          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
+        >
           {features.map((feature) => {
             const Icon = feature.icon;
             return (
-              <div
+              <motion.div
                 key={feature.title}
-                className="group p-6 rounded-2xl border border-[#F0E8D6] hover:shadow-md hover:border-[#C6A34E]/30 transition-all duration-200"
+                variants={prefersReduced ? undefined : scaleIn()}
+                whileHover={prefersReduced ? undefined : { y: -4, boxShadow: "0 12px 40px rgba(198,163,78,0.15)" }}
+                transition={{ duration: 0.2 }}
+                className="group p-6 rounded-2xl border border-[#F0E8D6] hover:border-[#C6A34E]/30 transition-colors duration-200 bg-white cursor-default"
               >
-                <div
+                <motion.div
                   className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
                   style={{ backgroundColor: feature.iconBg }}
+                  whileHover={prefersReduced ? undefined : { rotate: [0, -8, 8, 0], scale: 1.1 }}
+                  transition={{ duration: 0.4 }}
                 >
                   <Icon className="w-5 h-5" style={{ color: feature.iconColor }} />
-                </div>
+                </motion.div>
                 <h3 className="font-display text-xl text-[#1B2A4A] mb-2">{feature.title}</h3>
                 <p className="text-sm text-[#8B7355] leading-relaxed">{feature.description}</p>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </AnimatedSection>
 
-        {/* ── Visual proof strip ─────────────────────────── */}
+        {/* Visual proof strip */}
         <div className="mt-16">
-          <p className="text-center text-[11px] font-semibold text-[#C6A34E] uppercase tracking-[3px] mb-6">
-            Seen in action
-          </p>
-          <div className="grid sm:grid-cols-3 gap-4">
+          <AnimatedSection className="text-center mb-6">
+            <p className="text-[11px] font-semibold text-[#C6A34E] uppercase tracking-[3px]">
+              In the Wild
+            </p>
+          </AnimatedSection>
+          <AnimatedSection
+            variants={prefersReduced ? undefined : staggerContainer(0.12)}
+            className="grid sm:grid-cols-3 gap-4"
+          >
             {proofImages.map((img) => (
-              <div key={img.label} className="group relative rounded-2xl overflow-hidden h-52 sm:h-60 shadow-sm border border-[#F0E8D6]">
+              <motion.div
+                key={img.label}
+                variants={prefersReduced ? undefined : scaleIn()}
+                whileHover={prefersReduced ? undefined : { scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+                className="group relative rounded-2xl overflow-hidden h-52 sm:h-60 shadow-sm border border-[#F0E8D6]"
+              >
                 <Image
                   src={img.src}
                   alt={img.alt}
@@ -133,9 +174,9 @@ export default function FeaturesSection() {
                   <div className="font-display text-xl text-white leading-none">{img.label}</div>
                   <div className="text-[11px] text-[#C6A34E] font-semibold mt-1 tracking-wider">{img.stat}</div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </AnimatedSection>
         </div>
 
       </div>

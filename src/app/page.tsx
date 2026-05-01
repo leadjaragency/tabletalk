@@ -3,8 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
+import LogoMarqueeStrip from "@/components/landing/LogoMarqueeStrip";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import TrialSection from "@/components/landing/TrialSection";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
@@ -23,8 +25,10 @@ export default async function RootPage() {
       <Navbar />
       <main>
         <HeroSection />
+        <LogoMarqueeStrip />
         <FeaturesSection />
         <HowItWorksSection />
+        <TestimonialsSection />
         <TrialSection />
         <CTASection />
       </main>

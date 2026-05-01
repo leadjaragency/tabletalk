@@ -1,4 +1,9 @@
+"use client";
+
 import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+import AnimatedSection from "./motion/AnimatedSection";
+import { fadeIn, fadeUp, scaleIn, slideInLeft, slideInRight, staggerContainer } from "./motion/MotionConfig";
 
 const testimonials = [
   {
@@ -28,12 +33,18 @@ const testimonials = [
 ];
 
 export default function TestimonialsSection() {
+  const prefersReduced = useReducedMotion();
+
   return (
-    <section className="py-20 bg-[#FAF6ED]">
+    <section id="testimonials" className="py-20 bg-[#FAF6ED]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* ── Visual header strip ───────────────────────────── */}
-        <div className="relative rounded-3xl overflow-hidden mb-14 h-52 sm:h-64">
+        {/* Visual header strip */}
+        <AnimatedSection
+          variants={prefersReduced ? undefined : fadeIn()}
+          threshold={0.1}
+          className="relative rounded-3xl overflow-hidden mb-14 h-52 sm:h-64"
+        >
           <Image
             src="/photos/happy-customer-2.png"
             alt="Happy customers enjoying an evening at a restaurant"
@@ -41,39 +52,79 @@ export default function TestimonialsSection() {
             className="object-cover object-center"
             sizes="(max-width: 640px) 95vw, (max-width: 1280px) 90vw, 1152px"
           />
-          {/* Navy overlay for text legibility */}
           <div className="absolute inset-0 bg-[#1B2A4A]/65" />
 
-          {/* Centered text over image */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6">
-            <p className="text-[11px] font-semibold text-[#C6A34E] uppercase tracking-[3px] mb-3">
-              Testimonials
-            </p>
-            <h2 className="font-display text-4xl sm:text-5xl text-white mb-2">
-              Restaurants love ServeMyTable
-            </h2>
-            <p className="text-white/70 text-sm sm:text-base max-w-md leading-relaxed">
-              Hear from owners who transformed their dining experience.
-            </p>
-          </div>
-        </div>
-
-        {/* ── Testimonial cards ─────────────────────────────── */}
-        <div className="grid md:grid-cols-3 gap-5">
-          {testimonials.map((t) => (
-            <div
-              key={t.name}
-              className="bg-white rounded-2xl p-6 border border-[#F0E8D6] shadow-sm flex flex-col hover:shadow-md transition-shadow duration-200"
+            <motion.p
+              className="text-[11px] font-semibold text-[#C6A34E] uppercase tracking-[3px] mb-3"
+              variants={prefersReduced ? undefined : fadeUp(0.2)}
+              initial="hidden"
+              animate="visible"
             >
+              Real Owners. Real Results.
+            </motion.p>
+            <motion.h2
+              className="font-display text-4xl sm:text-5xl text-white mb-2"
+              variants={prefersReduced ? undefined : fadeUp(0.35)}
+              initial="hidden"
+              animate="visible"
+            >
+              What Restaurant Owners Say
+            </motion.h2>
+            <motion.p
+              className="text-white/70 text-sm sm:text-base max-w-md leading-relaxed"
+              variants={prefersReduced ? undefined : fadeUp(0.5)}
+              initial="hidden"
+              animate="visible"
+            >
+              Hear from owners who transformed their dining experience.
+            </motion.p>
+          </div>
+        </AnimatedSection>
+
+        {/* Testimonial cards */}
+        <AnimatedSection
+          variants={prefersReduced ? undefined : staggerContainer(0.15)}
+          className="grid md:grid-cols-3 gap-5"
+        >
+          {testimonials.map((t) => (
+            <motion.div
+              key={t.name}
+              variants={prefersReduced ? undefined : fadeUp()}
+              whileHover={prefersReduced ? undefined : { y: -6, boxShadow: "0 20px 60px rgba(27,42,74,0.12)" }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-2xl p-6 border border-[#F0E8D6] shadow-sm flex flex-col relative"
+            >
+              {/* Decorative quote mark */}
+              <motion.span
+                className="absolute -top-3 -left-1 text-[#C6A34E]/15 font-display text-8xl leading-none select-none pointer-events-none"
+                variants={prefersReduced ? undefined : fadeIn(0.1)}
+                initial="hidden"
+                animate="visible"
+              >
+                &ldquo;
+              </motion.span>
+
               {/* Stars */}
-              <div className="flex gap-0.5 mb-4">
+              <motion.div
+                className="flex gap-0.5 mb-4"
+                variants={prefersReduced ? undefined : staggerContainer(0.05)}
+                initial="hidden"
+                animate="visible"
+              >
                 {Array.from({ length: t.stars }).map((_, i) => (
-                  <span key={i} className="text-[#C6A34E] text-base">★</span>
+                  <motion.span
+                    key={i}
+                    className="text-[#C6A34E] text-base"
+                    variants={prefersReduced ? undefined : scaleIn()}
+                  >
+                    ★
+                  </motion.span>
                 ))}
-              </div>
+              </motion.div>
 
               {/* Quote */}
-              <p className="text-[#1B2A4A] text-sm leading-relaxed mb-6 italic flex-1">
+              <p className="text-[#1B2A4A] text-sm leading-relaxed mb-6 italic flex-1 relative z-10">
                 &ldquo;{t.quote}&rdquo;
               </p>
 
@@ -87,15 +138,23 @@ export default function TestimonialsSection() {
                   <div className="text-xs text-[#8B7355]">{t.restaurant}</div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </AnimatedSection>
 
-        {/* ── Review CTA strip ──────────────────────────────── */}
-        <div className="mt-10 rounded-2xl overflow-hidden border border-[#F0E8D6]">
+        {/* Review CTA strip */}
+        <AnimatedSection
+          variants={prefersReduced ? undefined : fadeUp(0.1)}
+          className="mt-10 rounded-2xl overflow-hidden border border-[#F0E8D6]"
+        >
           <div className="grid sm:grid-cols-2 items-center">
             {/* Image side */}
-            <div className="relative h-48 sm:h-full min-h-[160px]">
+            <motion.div
+              className="relative h-48 sm:h-full min-h-[160px]"
+              variants={prefersReduced ? undefined : slideInLeft(0.1)}
+              initial="hidden"
+              animate="visible"
+            >
               <Image
                 src="/photos/review.png"
                 alt="Customer leaving a 5-star restaurant review on their phone"
@@ -104,22 +163,38 @@ export default function TestimonialsSection() {
                 sizes="(max-width: 640px) 95vw, 50vw"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#1B2A4A]/10" />
-            </div>
+            </motion.div>
             {/* Text side */}
-            <div className="bg-[#1B2A4A] p-6 sm:p-8">
+            <motion.div
+              className="bg-[#1B2A4A] p-6 sm:p-8"
+              variants={prefersReduced ? undefined : slideInRight(0.2)}
+              initial="hidden"
+              animate="visible"
+            >
               <div className="font-display text-3xl sm:text-4xl text-[#C6A34E] mb-2">Auto Google Reviews</div>
               <p className="text-white/70 text-sm leading-relaxed mb-4">
                 After every meal, ServeMyTable prompts happy guests to leave a Google review. More reviews, higher ranking, more customers.
               </p>
-              <div className="flex gap-0.5">
+              <motion.div
+                className="flex gap-0.5"
+                variants={prefersReduced ? undefined : staggerContainer(0.08)}
+                initial="hidden"
+                animate="visible"
+              >
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className="text-[#C6A34E] text-lg">★</span>
+                  <motion.span
+                    key={i}
+                    className="text-[#C6A34E] text-lg"
+                    variants={prefersReduced ? undefined : scaleIn()}
+                  >
+                    ★
+                  </motion.span>
                 ))}
                 <span className="text-white/50 text-sm ml-2 self-center">· Free marketing</span>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
-        </div>
+        </AnimatedSection>
 
       </div>
     </section>

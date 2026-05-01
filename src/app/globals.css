@@ -89,6 +89,12 @@
   --animate-spin-slow:  spin 3s linear infinite;
   --animate-bounce-in:  bounceIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   --animate-glow-pulse: glowPulse 3s ease-in-out infinite;
+
+  /* ── Landing page cinematic animation tokens ────────────── */
+  --animate-marquee:    marqueeScroll 28s linear infinite;
+  --animate-orb-drift:  orbDrift 8s ease-in-out infinite;
+  --animate-float-bob:  floatBob 3s ease-in-out infinite;
+  --animate-gold-glow:  goldGlow 3s ease-in-out infinite;
 }
 
 /* ============================================================
@@ -339,6 +345,28 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
+  /* Landing page marquee strip */
+  .marquee-track {
+    animation: marqueeScroll 28s linear infinite;
+  }
+  .marquee-track:hover {
+    animation-play-state: paused;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track { animation: none; }
+  }
+
+  /* Landing page floating elements */
+  .animate-float-bob {
+    animation: floatBob 3s ease-in-out infinite;
+  }
+  .animate-gold-glow {
+    animation: goldGlow 3s ease-in-out infinite;
+  }
+  .animate-orb-drift {
+    animation: orbDrift 8s ease-in-out infinite;
+  }
+
   /* Shimmer loading effect */
   .shimmer {
     background: linear-gradient(
@@ -360,4 +388,26 @@
 @keyframes glowPulse {
   0%, 100% { box-shadow: 0 0 16px rgba(124, 58, 237, 0.15); }
   50%       { box-shadow: 0 0 32px rgba(124, 58, 237, 0.35); }
+}
+
+/* ── Landing page cinematic keyframes ──────────────────────── */
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes orbDrift {
+  0%, 100% { transform: translate(30%, -30%) scale(1); }
+  33%       { transform: translate(32%, -28%) scale(1.04); }
+  66%       { transform: translate(28%, -32%) scale(0.97); }
+}
+
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes goldGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(198,163,78,0.2), 0 0 60px rgba(198,163,78,0.08); }
+  50%       { box-shadow: 0 0 40px rgba(198,163,78,0.45), 0 0 100px rgba(198,163,78,0.18); }
 }

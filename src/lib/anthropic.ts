@@ -4,10 +4,10 @@ import Anthropic from "@anthropic-ai/sdk";
 // Model + pricing constants
 // ---------------------------------------------------------------------------
 
-export const WAITER_MODEL      = "claude-sonnet-4-20250514" as const;
+export const WAITER_MODEL      = "claude-sonnet-4-6" as const;
 export const WAITER_MAX_TOKENS = 1024;
 
-// Sonnet 4 pricing — $3 / MTok input, $15 / MTok output
+// Sonnet 4.6 pricing — $3 / MTok input, $15 / MTok output
 export const COST_PER_INPUT_TOKEN  = 3  / 1_000_000;
 export const COST_PER_OUTPUT_TOKEN = 15 / 1_000_000;
 

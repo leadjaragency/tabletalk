@@ -1,7 +1,8 @@
+import { getRequiredSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+
 import { prisma } from "@/lib/db";
-import { authOptions } from "@/lib/auth";
+
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function POST(_req: Request, { params }: Ctx) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await getRequiredSession();
     if (!session?.user.restaurantId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }

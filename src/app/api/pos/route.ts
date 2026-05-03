@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions, getRestaurantIdFromSession } from "@/lib/auth";
+
+import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // ── GET /api/pos — status + sync stats ─────────────────────────────────────
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
 
@@ -55,7 +55,7 @@ export async function GET() {
 // ── POST /api/pos — sync all unsynced orders ────────────────────────────────
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
 

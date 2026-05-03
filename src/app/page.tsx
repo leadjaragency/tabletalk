@@ -1,6 +1,7 @@
+import { getRequiredSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import LogoMarqueeStrip from "@/components/landing/LogoMarqueeStrip";
@@ -12,7 +13,7 @@ import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 
 export default async function RootPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getRequiredSession();
 
   if (session) {
     const { role } = session.user;

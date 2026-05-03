@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions, getRestaurantIdFromSession } from "@/lib/auth";
+
+import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export async function PUT(
 ) {
   try {
     const { userId } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await getRequiredSession();
     if (!session || session.user.role !== "restaurant_owner") {
       return NextResponse.json({ error: "Owner only" }, { status: 403 });
     }
@@ -54,7 +54,7 @@ export async function DELETE(
 ) {
   try {
     const { userId } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await getRequiredSession();
     if (!session || session.user.role !== "restaurant_owner") {
       return NextResponse.json({ error: "Owner only" }, { status: 403 });
     }

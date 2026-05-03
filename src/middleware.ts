@@ -1,13 +1,27 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { createServerClient } from "@supabase/ssr";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function redirectTo(url: string, req: NextRequest) {
-  return NextResponse.redirect(new URL(url, req.url));
+function redirectTo(url: string, req: NextRequest, res: NextResponse) {
+  const redirectUrl = new URL(url, req.url);
+  const redirect = NextResponse.redirect(redirectUrl);
+  // Copy refreshed session cookies from `res` to the redirect response
+  res.cookies.getAll().forEach((cookie) => {
+    redirect.cookies.set(cookie.name, cookie.value);
+  });
+  return redirect;
+}
+
+function jsonError(message: string, status: number, res: NextResponse) {
+  const response = NextResponse.json({ error: message }, { status });
+  res.cookies.getAll().forEach((cookie) => {
+    response.cookies.set(cookie.name, cookie.value);
+  });
+  return response;
 }
 
 // ---------------------------------------------------------------------------
@@ -17,73 +31,99 @@ function redirectTo(url: string, req: NextRequest) {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Retrieve JWT token (Edge-compatible — no DB queries)
-  const token = await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  // Create a response object that Supabase SSR can write refreshed cookies into.
+  // We MUST return this `res` (or a response derived from it) so the browser
+  // receives the updated session cookie — never return a bare NextResponse.next().
+  let res = NextResponse.next({ request: req });
 
-  const role = token?.role as string | undefined;
-  const isAuthenticated = !!token;
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
+          res = NextResponse.next({ request: req });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // Refresh session — this writes updated cookies if the JWT was refreshed
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const role = user?.user_metadata?.role as string | undefined;
+  const isActive = user?.user_metadata?.isActive as boolean | undefined;
+  const trialEndsAt = user?.user_metadata?.trialEndsAt as string | undefined;
+  const isAuthenticated = !!user && isActive !== false;
+
+  // Trial expiry check (for restaurant roles)
+  const trialExpired =
+    !!trialEndsAt && new Date(trialEndsAt) < new Date() &&
+    (role === "restaurant_owner" || role === "restaurant_manager");
 
   // ── /auth/* ──────────────────────────────────────────────────────────────
-  // Public pages. If already logged in, redirect to appropriate dashboard.
   if (pathname.startsWith("/auth/")) {
-    // Allow /auth/pending for any authenticated user (owner awaiting approval)
-    if (pathname === "/auth/pending") return NextResponse.next();
+    // Allow pending + trial-expired pages for authenticated users
+    if (pathname === "/auth/pending") return res;
+    if (pathname === "/auth/trial-expired") return res;
+    if (pathname === "/auth/forgot-password") return res;
+    if (pathname === "/auth/reset-password") return res;
 
-    if (isAuthenticated) {
-      if (role === "super_admin") return redirectTo("/super-admin", req);
+    // Redirect already-authenticated users to their dashboard
+    if (isAuthenticated && !trialExpired) {
+      if (role === "super_admin") return redirectTo("/super-admin", req, res);
       if (role === "restaurant_owner" || role === "restaurant_manager")
-        return redirectTo("/admin", req);
+        return redirectTo("/admin", req, res);
     }
-    return NextResponse.next();
+    return res;
   }
 
   // ── / (root) ─────────────────────────────────────────────────────────────
-  // Unauthenticated visitors see the public landing page.
-  // Authenticated users are redirected to their dashboard.
   if (pathname === "/") {
-    if (!isAuthenticated) return NextResponse.next();
-    if (role === "super_admin") return redirectTo("/super-admin", req);
+    if (!isAuthenticated) return res;
+    if (trialExpired) return redirectTo("/auth/trial-expired", req, res);
+    if (role === "super_admin") return redirectTo("/super-admin", req, res);
     if (role === "restaurant_owner" || role === "restaurant_manager")
-      return redirectTo("/admin", req);
-    return NextResponse.next();
+      return redirectTo("/admin", req, res);
+    return res;
   }
 
   // ── /super-admin/* ───────────────────────────────────────────────────────
   if (pathname.startsWith("/super-admin")) {
-    if (!isAuthenticated) return redirectTo("/auth/login", req);
-    if (role !== "super_admin") return redirectTo("/auth/login", req);
-    return NextResponse.next();
+    if (!isAuthenticated) return redirectTo("/auth/login", req, res);
+    if (role !== "super_admin") return redirectTo("/auth/login", req, res);
+    return res;
   }
 
   // ── /api/super-admin/* ───────────────────────────────────────────────────
   if (pathname.startsWith("/api/super-admin")) {
-    if (!isAuthenticated)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (role !== "super_admin")
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    return NextResponse.next();
+    if (!isAuthenticated) return jsonError("Unauthorized", 401, res);
+    if (role !== "super_admin") return jsonError("Forbidden", 403, res);
+    return res;
   }
 
   // ── /admin/* ─────────────────────────────────────────────────────────────
   if (pathname.startsWith("/admin")) {
-    if (!isAuthenticated) return redirectTo("/auth/login", req);
+    if (!isAuthenticated) return redirectTo("/auth/login", req, res);
     if (role !== "restaurant_owner" && role !== "restaurant_manager")
-      return redirectTo("/auth/login", req);
-    // restaurantId must be present (should always be set for restaurant roles)
-    if (!token.restaurantId) return redirectTo("/auth/pending", req);
-    return NextResponse.next();
+      return redirectTo("/auth/login", req, res);
+    if (!user.user_metadata?.restaurantId)
+      return redirectTo("/auth/pending", req, res);
+    if (trialExpired) return redirectTo("/auth/trial-expired", req, res);
+    return res;
   }
 
-  // ── /api/* (restaurant-scoped, non-super-admin) ──────────────────────────
-  // Covers /api/menu, /api/tables, /api/orders, /api/waiters, /api/qr, etc.
-  // /api/auth/* and /api/chat/* are excluded via the matcher below.
+  // ── /api/* (restaurant-scoped) ───────────────────────────────────────────
   const restaurantApiPrefixes = [
-    // NOTE: /api/menu, /api/categories, and /api/orders are intentionally
-    // excluded — they handle public customer access and admin access
-    // internally in their route handlers (dual-auth pattern).
     "/api/categories",
     "/api/tables",
     "/api/waiters",
@@ -95,50 +135,31 @@ export async function middleware(req: NextRequest) {
   ];
 
   if (restaurantApiPrefixes.some((prefix) => pathname.startsWith(prefix))) {
-    if (!isAuthenticated)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!isAuthenticated) return jsonError("Unauthorized", 401, res);
     if (role !== "restaurant_owner" && role !== "restaurant_manager")
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    if (!token.restaurantId)
-      return NextResponse.json({ error: "No restaurant" }, { status: 403 });
-    return NextResponse.next();
+      return jsonError("Forbidden", 403, res);
+    if (!user.user_metadata?.restaurantId)
+      return jsonError("No restaurant", 403, res);
+    if (trialExpired) return jsonError("Trial expired", 403, res);
+    return res;
   }
 
-  // ── /table/* ─────────────────────────────────────────────────────────────
-  // Customer-facing app. Public — no auth required.
-  // Restaurant is resolved from ?restaurant= query param by the layout.
-  if (pathname.startsWith("/table")) {
-    return NextResponse.next();
-  }
+  // ── /table/* — Customer app (public, no auth required) ───────────────────
+  if (pathname.startsWith("/table")) return res;
 
-  // ── /api/chat/* ──────────────────────────────────────────────────────────
-  // Customer-facing AI chat. Public — authenticated via restaurantSlug.
-  if (pathname.startsWith("/api/chat")) {
-    return NextResponse.next();
-  }
+  // ── /api/chat/*, /api/games/* — Customer-facing (public) ─────────────────
+  if (pathname.startsWith("/api/chat")) return res;
+  if (pathname.startsWith("/api/games")) return res;
 
-  // ── /api/games/* ─────────────────────────────────────────────────────────
-  if (pathname.startsWith("/api/games")) {
-    return NextResponse.next();
-  }
-
-  // Default: allow through
-  return NextResponse.next();
+  return res;
 }
 
 // ---------------------------------------------------------------------------
-// Matcher — run middleware only on relevant paths
+// Matcher
 // ---------------------------------------------------------------------------
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths EXCEPT:
-     *  - _next/static  (static files)
-     *  - _next/image   (image optimisation)
-     *  - favicon.ico
-     *  - public/ assets (svg, png, jpg, jpeg, gif, webp, ico, mp3, wav)
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3|wav)$).*)",
   ],
 };

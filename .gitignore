@@ -49,3 +49,5 @@ next-env.d.ts
 
 # Windows reserved device name (appears as phantom file on Windows)
 nul
+
+.vercel

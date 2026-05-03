@@ -1,35 +1,27 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-
-// ---------------------------------------------------------------------------
-// Schema
-// ---------------------------------------------------------------------------
+import { supabaseAdmin } from "@/lib/supabase-server";
+import { getRequiredSession, requireRole } from "@/lib/auth";
+import { sendApprovalEmail } from "@/lib/email";
 
 const approveSchema = z.object({
-  restaurantId: z.string().cuid(),
-  action: z.enum(["approve", "reject"]),
-  tierId: z.string().cuid().optional(),  // required when action === "approve"
+  restaurantId:    z.string().cuid(),
+  action:          z.enum(["approve", "reject"]),
+  tierId:          z.string().cuid().optional(),
   rejectionReason: z.string().optional(),
 });
 
 // ---------------------------------------------------------------------------
 // POST /api/auth/approve
 // Super admin approves or rejects a pending restaurant signup.
+// On approve: starts the 14-day trial clock and sends approval email.
 // ---------------------------------------------------------------------------
 
 export async function POST(req: Request) {
   try {
-    // Auth guard — super_admin only
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (session.user.role !== "super_admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const session = await getRequiredSession();
+    requireRole(session, ["super_admin"]);
 
     const body = await req.json();
     const parsed = approveSchema.safeParse(body);
@@ -43,9 +35,9 @@ export async function POST(req: Request) {
 
     const { restaurantId, action, tierId } = parsed.data;
 
-    // Verify restaurant exists and is still pending
+    // Fetch restaurant + owner user
     const restaurant = await prisma.restaurant.findUnique({
-      where: { id: restaurantId },
+      where:   { id: restaurantId },
       include: { users: { where: { role: "restaurant_owner" } } },
     });
 
@@ -67,35 +59,74 @@ export async function POST(req: Request) {
         );
       }
 
-      // Verify tier exists
       const tier = await prisma.subscriptionTier.findUnique({ where: { id: tierId } });
       if (!tier) {
         return NextResponse.json({ error: "Tier not found" }, { status: 404 });
       }
 
-      // Activate restaurant + owner(s) in a transaction
+      const now = new Date();
+      const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // +14 days
+
+      // Activate restaurant + owner in Prisma
       await prisma.$transaction([
         prisma.restaurant.update({
           where: { id: restaurantId },
-          data: { status: "active", tierId },
+          data: {
+            status:       "active",
+            tierId,
+            trialStartsAt: now,
+            trialEndsAt,
+          },
         }),
         prisma.user.updateMany({
           where: { restaurantId, role: "restaurant_owner" },
-          data: { isActive: true },
+          data:  { isActive: true },
         }),
       ]);
 
+      // Update Supabase user metadata for each owner (enables middleware trial check)
+      for (const owner of restaurant.users) {
+        if (owner.supabaseUserId) {
+          await supabaseAdmin.auth.admin.updateUserById(owner.supabaseUserId, {
+            user_metadata: {
+              role:          "restaurant_owner",
+              isActive:      true,
+              restaurantId,
+              restaurantSlug: restaurant.slug,
+              trialEndsAt:   trialEndsAt.toISOString(),
+            },
+          });
+        }
+
+        // Send approval email (fire-and-forget)
+        sendApprovalEmail({
+          to:             owner.email,
+          ownerName:      owner.name,
+          restaurantName: restaurant.name,
+          trialEndsAt,
+        }).catch((err) => console.error("[approve] Resend approval email failed:", err));
+      }
+
       return NextResponse.json({
-        message: "Restaurant approved and activated.",
+        message:      "Restaurant approved and 14-day trial started.",
         restaurantId,
+        trialEndsAt:  trialEndsAt.toISOString(),
       });
     }
 
-    // action === "reject" — mark restaurant disabled, leave user inactive
+    // action === "reject"
     await prisma.restaurant.update({
       where: { id: restaurantId },
-      data: { status: "disabled" },
+      data:  { status: "disabled" },
     });
+
+    for (const owner of restaurant.users) {
+      if (owner.supabaseUserId) {
+        await supabaseAdmin.auth.admin.updateUserById(owner.supabaseUserId, {
+          user_metadata: { isActive: false },
+        });
+      }
+    }
 
     return NextResponse.json({
       message: "Restaurant application rejected.",

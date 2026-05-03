@@ -1,8 +1,7 @@
+import { getRequiredSession } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { supabaseAdmin } from "@/lib/supabase-server";
 import { prisma } from "@/lib/db";
 import { generateSlug } from "@/lib/utils";
 
@@ -27,7 +26,7 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getRequiredSession();
     if (!session || session.user.role !== "super_admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -76,7 +75,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getRequiredSession();
     if (!session || session.user.role !== "super_admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -114,31 +113,56 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Tier not found" }, { status: 404 });
     }
 
-    const passwordHash = await bcrypt.hash(ownerPassword, 12);
+    // Create Supabase Auth user first
+    const { data: sbData, error: sbError } = await supabaseAdmin.auth.admin.createUser({
+      email:         ownerEmail,
+      password:      ownerPassword,
+      email_confirm: true,
+      user_metadata: { role: "restaurant_owner", isActive: true },
+    });
 
-    const { restaurant } = await prisma.$transaction(async (tx) => {
-      const restaurant = await tx.restaurant.create({
-        data: {
-          name, slug, cuisine,
-          phone:   phone   ?? null,
-          address: address ?? null,
-          status:  "active",
-          tierId,
-        },
+    if (sbError || !sbData.user) {
+      return NextResponse.json({ error: "Failed to create auth user" }, { status: 500 });
+    }
+
+    let restaurant;
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const restaurant = await tx.restaurant.create({
+          data: {
+            name, slug, cuisine,
+            phone:   phone   ?? null,
+            address: address ?? null,
+            status:  "active",
+            tierId,
+          },
+        });
+
+        await tx.user.create({
+          data: {
+            supabaseUserId: sbData.user.id,
+            name:           ownerName,
+            email:          ownerEmail,
+            role:           "restaurant_owner",
+            restaurantId:   restaurant.id,
+            isActive:       true,
+          },
+        });
+
+        return { restaurant };
       });
+      restaurant = result.restaurant;
+    } catch (txErr) {
+      await supabaseAdmin.auth.admin.deleteUser(sbData.user.id).catch(() => {});
+      throw txErr;
+    }
 
-      await tx.user.create({
-        data: {
-          name:         ownerName,
-          email:        ownerEmail,
-          passwordHash,
-          role:         "restaurant_owner",
-          restaurantId: restaurant.id,
-          isActive:     true,
-        },
-      });
-
-      return { restaurant };
+    // Update Supabase metadata with restaurantId
+    await supabaseAdmin.auth.admin.updateUserById(sbData.user.id, {
+      user_metadata: {
+        role: "restaurant_owner", isActive: true,
+        restaurantId: restaurant.id, restaurantSlug: restaurant.slug,
+      },
     });
 
     return NextResponse.json(

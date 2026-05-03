@@ -1,6 +1,5 @@
 import path from "path";
 import fs from "fs";
-import bcrypt from "bcryptjs";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
@@ -139,10 +138,10 @@ async function main() {
   await prisma.user.create({
     data: {
       email: "superadmin@servemytable.ca",
-      passwordHash: await bcrypt.hash("Naman2019@", 12),
       name: "Platform Admin",
       role: "super_admin",
       isActive: true,
+      // supabaseUserId: set manually after creating this user in Supabase Dashboard
     },
   });
   console.log("   ✓ superadmin@servemytable.ca\n");
@@ -170,11 +169,11 @@ async function main() {
   await prisma.user.create({
     data: {
       email: "owner@saffronpalace.com",
-      passwordHash: await bcrypt.hash("saffron2024", 12),
       name: "Raj Malhotra",
       role: "restaurant_owner",
       restaurantId: restaurant.id,
       isActive: true,
+      // supabaseUserId: set manually after creating this user in Supabase Dashboard
     },
   });
   console.log("   ✓ Saffron Palace + owner@saffronpalace.com\n");

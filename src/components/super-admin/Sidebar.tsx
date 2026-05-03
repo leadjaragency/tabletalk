@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard,
@@ -19,7 +19,7 @@ import {
   ScrollText,
   ToggleLeft,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { createBrowserClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 interface NavDef {
@@ -76,7 +76,15 @@ interface SuperAdminSidebarProps {
 export function SuperAdminSidebar({ pendingCount, adminName }: SuperAdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const close = () => setMobileOpen(false);
+
+  async function handleSignOut() {
+    const supabase = createBrowserClient();
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+    router.refresh();
+  }
 
   const initials = adminName
     .split(" ")
@@ -198,7 +206,7 @@ export function SuperAdminSidebar({ pendingCount, adminName }: SuperAdminSidebar
             </p>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: "/auth/login" })}
+            onClick={handleSignOut}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/10"
             style={{ color: "rgba(255,255,255,0.5)" }}
             title="Sign out"

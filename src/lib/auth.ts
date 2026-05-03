@@ -1,141 +1,70 @@
-import { type NextAuthOptions, getServerSession } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import type { Session } from "next-auth";
-import type { UserRole } from "@/types";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import type { AppSession, UserRole } from "@/types";
 
 // ---------------------------------------------------------------------------
-// NextAuth options — imported by the route handler and getServerSession calls
+// getRequiredSession — reads the Supabase session from cookies, then fetches
+// the matching Prisma User row for app-level fields (name, restaurantId, etc.)
+// Throws AuthError(401) if not authenticated.
 // ---------------------------------------------------------------------------
-export const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email:    { label: "Email",    type: "email" },
-        password: { label: "Password", type: "password" },
-      },
+export async function getRequiredSession(): Promise<AppSession> {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+  if (!user) throw new AuthError("Unauthorized", 401);
 
-        // Look up user with their restaurant (for slug + status check)
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase().trim() },
-          include: {
-            restaurant: {
-              select: { id: true, slug: true, status: true },
-            },
-          },
-        });
-
-        // User not found or deactivated
-        if (!user || !user.isActive) return null;
-
-        // Password check
-        const passwordOk = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash
-        );
-        if (!passwordOk) return null;
-
-        // Restaurant staff must have an active restaurant
-        // (super_admin has no restaurant — skip the check)
-        if (user.role !== "super_admin") {
-          const status = user.restaurant?.status;
-          // Allow pending through — they'll be redirected to /auth/pending
-          // Deny suspended / disabled
-          if (status === "suspended" || status === "disabled") return null;
-        }
-
-        return {
-          id:             user.id,
-          email:          user.email,
-          name:           user.name,
-          role:           user.role as UserRole,
-          restaurantId:   user.restaurantId ?? null,
-          restaurantSlug: user.restaurant?.slug ?? null,
-        };
-      },
-    }),
-  ],
-
-  callbacks: {
-    // Encode extra fields into the JWT when the user signs in
-    async jwt({ token, user }) {
-      if (user) {
-        token.id             = user.id;
-        token.role           = user.role;
-        token.restaurantId   = user.restaurantId;
-        token.restaurantSlug = user.restaurantSlug;
-      }
-      return token;
+  // Look up the Prisma user by the Supabase user ID
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseUserId: user.id },
+    include: {
+      restaurant: { select: { id: true, slug: true, status: true, trialEndsAt: true } },
     },
+  });
 
-    // Expose JWT fields on the session object (available via useSession / getServerSession)
-    async session({ session, token }) {
-      session.user.id             = token.id;
-      session.user.role           = token.role;
-      session.user.restaurantId   = token.restaurantId;
-      session.user.restaurantSlug = token.restaurantSlug;
-      return session;
-    },
-  },
+  if (!dbUser || !dbUser.isActive) throw new AuthError("Unauthorized", 401);
 
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-
-  pages: {
-    signIn: "/auth/login",
-    error:  "/auth/login",
-  },
-
-  secret: process.env.NEXTAUTH_SECRET,
-
-  // Only log errors in production to keep dev console clean
-  logger: {
-    error: (code, ...message) => {
-      if (process.env.NODE_ENV === "production") {
-        console.error("[NextAuth]", code, ...message);
-      }
-    },
-  },
-};
-
-// ---------------------------------------------------------------------------
-// Server-side helper: get session, throwing if not authenticated
-// ---------------------------------------------------------------------------
-export async function getRequiredSession(): Promise<Session> {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    throw new AuthError("Unauthorized", 401);
+  // Block suspended / disabled restaurant accounts
+  if (dbUser.role !== "super_admin") {
+    const status = dbUser.restaurant?.status;
+    if (status === "suspended" || status === "disabled") {
+      throw new AuthError("Account is not active", 403);
+    }
   }
-  return session;
+
+  return {
+    user: {
+      id:             dbUser.id,
+      email:          dbUser.email,
+      name:           dbUser.name,
+      role:           dbUser.role as UserRole,
+      restaurantId:   dbUser.restaurantId ?? null,
+      restaurantSlug: dbUser.restaurant?.slug ?? null,
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Role guard — call after getRequiredSession
+// requireRole — call after getRequiredSession to enforce role-based access
 // ---------------------------------------------------------------------------
-export function requireRole(session: Session, roles: UserRole[]): void {
+export function requireRole(session: AppSession, roles: UserRole[]): void {
   if (!roles.includes(session.user.role)) {
     throw new AuthError("Forbidden", 403);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Extract restaurantId from session (throws for super_admin with no restaurant)
+// getRestaurantIdFromSession — extracts restaurantId, throws if missing
 // ---------------------------------------------------------------------------
-export function getRestaurantIdFromSession(session: Session): string {
+export function getRestaurantIdFromSession(session: AppSession): string {
   const id = session.user.restaurantId;
   if (!id) throw new AuthError("No restaurant associated with this account", 403);
   return id;
 }
 
 // ---------------------------------------------------------------------------
-// Look up a restaurant by its URL slug (customer-facing APIs use this)
+// getRestaurantFromSlug — customer-facing APIs resolve restaurant from URL param
 // ---------------------------------------------------------------------------
 export async function getRestaurantFromSlug(slug: string) {
   const restaurant = await prisma.restaurant.findUnique({
@@ -158,18 +87,25 @@ export async function getRestaurantFromSlug(slug: string) {
     },
   });
 
-  if (!restaurant) {
-    throw new AuthError("Restaurant not found", 404);
-  }
-  if (restaurant.status !== "active") {
-    throw new AuthError("Restaurant is not active", 403);
-  }
+  if (!restaurant) throw new AuthError("Restaurant not found", 404);
+  if (restaurant.status !== "active") throw new AuthError("Restaurant is not active", 403);
 
   return restaurant;
 }
 
 // ---------------------------------------------------------------------------
-// Typed error class so API routes can return the right HTTP status code
+// getDashboardPath — resolve which dashboard to redirect to after login
+// ---------------------------------------------------------------------------
+export function getDashboardPath(role: UserRole): string {
+  switch (role) {
+    case "super_admin":        return "/super-admin";
+    case "restaurant_owner":
+    case "restaurant_manager": return "/admin";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// AuthError — typed error class so API routes can return the right HTTP status
 // ---------------------------------------------------------------------------
 export class AuthError extends Error {
   constructor(
@@ -178,16 +114,5 @@ export class AuthError extends Error {
   ) {
     super(message);
     this.name = "AuthError";
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Convenience: resolve which dashboard to redirect to after login
-// ---------------------------------------------------------------------------
-export function getDashboardPath(role: UserRole): string {
-  switch (role) {
-    case "super_admin":          return "/super-admin";
-    case "restaurant_owner":
-    case "restaurant_manager":   return "/admin";
   }
 }

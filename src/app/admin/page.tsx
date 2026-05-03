@@ -1,6 +1,7 @@
+import { getRequiredSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { prisma } from "@/lib/db";
 import { AutoRefresh } from "@/components/admin/AutoRefresh";
 import {
@@ -250,7 +251,7 @@ function WaiterStatusCard({ waiter }: { waiter: Waiter }) {
 // ---------------------------------------------------------------------------
 
 export default async function AdminDashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getRequiredSession();
   if (!session?.user.restaurantId) redirect("/auth/login");
 
   const {

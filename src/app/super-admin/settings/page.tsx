@@ -1,6 +1,7 @@
+import { getRequiredSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { prisma } from "@/lib/db";
 import { Settings, Shield, Key } from "lucide-react";
 
@@ -11,7 +12,7 @@ async function getTiers() {
 }
 
 export default async function SuperAdminSettingsPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getRequiredSession();
   if (!session || session.user.role !== "super_admin") redirect("/auth/login");
 
   const tiers = await getTiers();
@@ -101,7 +102,7 @@ export default async function SuperAdminSettingsPage() {
               <p className="text-sm font-medium text-sa-text">AI Model</p>
               <p className="text-xs text-sa-muted mt-0.5">Current default model</p>
             </div>
-            <span className="font-mono text-xs text-sa-muted">claude-sonnet-4-20250514</span>
+            <span className="font-mono text-xs text-sa-muted">claude-sonnet-4-6</span>
           </div>
         </div>
         <p className="text-xs text-sa-muted">

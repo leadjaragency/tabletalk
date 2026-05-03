@@ -1,6 +1,7 @@
+import { getRequiredSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import Anthropic from "@anthropic-ai/sdk";
 import { ALLERGENS } from "@/lib/constants";
 
@@ -32,7 +33,7 @@ export interface ExtractedDish {
 export async function POST(req: Request) {
   try {
     // ── Auth ────────────────────────────────────────────────────────────────
-    const session = await getServerSession(authOptions);
+    const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { restaurantId } = session.user;
     if (!restaurantId) return NextResponse.json({ error: "No restaurant" }, { status: 403 });

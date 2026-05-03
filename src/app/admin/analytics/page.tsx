@@ -1,6 +1,7 @@
+import { getRequiredSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { prisma } from "@/lib/db";
 import { TrendingUp, Star, Gamepad2, ShoppingBag } from "lucide-react";
 
@@ -113,7 +114,7 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default async function AdminAnalyticsPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getRequiredSession();
   if (!session?.user.restaurantId) redirect("/auth/login");
 
   const {

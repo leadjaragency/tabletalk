@@ -34,8 +34,8 @@ export default function Footer() {
               AI-powered virtual waiters for restaurants. From QR scan to Google review — we handle it all.
             </p>
             <div className="text-xs text-white/40 space-y-1">
-              <p>hello@servemytable.com</p>
-              <p>servemytable.com</p>
+              <p>hello@servemytable.ca</p>
+              <p>servemytable.ca</p>
             </div>
           </motion.div>
 

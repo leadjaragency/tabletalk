@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions, getRestaurantIdFromSession } from "@/lib/auth";
+
+import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { generateTableQR } from "@/lib/qr-generator";
 
@@ -12,7 +12,7 @@ const Schema = z.object({ tableId: z.string().min(1) });
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
 

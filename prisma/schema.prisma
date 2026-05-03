@@ -10,16 +10,17 @@ datasource db {
 // ==================== PLATFORM LEVEL ====================
 
 model User {
-  id           String      @id @default(cuid())
-  email        String      @unique
-  passwordHash String
-  name         String
-  role         String // "super_admin", "restaurant_owner", "restaurant_manager"
-  restaurantId String?
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
-  isActive     Boolean     @default(true)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id             String      @id @default(cuid())
+  supabaseUserId String?     @unique
+  email          String      @unique
+  passwordHash   String?
+  name           String
+  role           String // "super_admin", "restaurant_owner", "restaurant_manager"
+  restaurantId   String?
+  restaurant     Restaurant? @relation(fields: [restaurantId], references: [id])
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 }
 
 model Restaurant {
@@ -36,8 +37,11 @@ model Restaurant {
   branding      Json?
   taxRate       Float              @default(0.08)
   currency      String             @default("USD")
-  status        String             @default("pending")
-  tierId        String?
+  status            String             @default("pending")
+  trialStartsAt     DateTime?
+  trialEndsAt       DateTime?
+  lastWarningSentAt DateTime?
+  tierId            String?
   tier          SubscriptionTier?  @relation(fields: [tierId], references: [id])
   users         User[]
   categories    Category[]

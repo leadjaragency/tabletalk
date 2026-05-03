@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,21 +8,13 @@ import { z } from "zod";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Utensils, QrCode, TrendingUp, Star } from "lucide-react";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { createBrowserClient } from "@/lib/supabase";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 type FormData = z.infer<typeof schema>;
-
-function parseError(error: string): string {
-  if (error === "CredentialsSignin") {
-    return "Invalid email or password. If your account is pending approval, please wait for our confirmation email.";
-  }
-  return "Something went wrong. Please try again.";
-}
 
 const STATS = [
   { icon: Utensils,   value: "500+",  label: "Restaurants" },
@@ -44,13 +35,15 @@ export default function LoginPage() {
 
   async function onSubmit(data: FormData) {
     setServerError(null);
-    const result = await signIn("credentials", {
+    const supabase = createBrowserClient();
+    const { error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
-      redirect: false,
     });
-    if (!result?.ok || result.error) {
-      setServerError(parseError(result?.error ?? "unknown"));
+    if (error) {
+      setServerError(
+        "Invalid email or password. If your account is pending approval, please wait for our confirmation email."
+      );
       return;
     }
     router.push("/");
@@ -68,7 +61,6 @@ export default function LoginPage() {
         className="hidden lg:flex lg:w-[52%] xl:w-[55%] relative flex-col overflow-hidden"
         style={{ background: "#1B2A4A" }}
       >
-        {/* Background photo */}
         <div className="absolute inset-0">
           <Image
             src="/photos/happy-owner.png"
@@ -78,7 +70,6 @@ export default function LoginPage() {
             sizes="55vw"
             priority
           />
-          {/* Dark gradient overlay */}
           <div
             className="absolute inset-0"
             style={{
@@ -88,10 +79,7 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Content on top of overlay */}
         <div className="relative z-10 flex flex-col h-full px-12 py-10">
-
-          {/* Logo */}
           <div>
             <Image
               src="/photos/logo-trimmed.png"
@@ -103,7 +91,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Main headline */}
           <div className="flex-1 flex flex-col justify-center">
             <p
               className="text-xs font-semibold uppercase tracking-[0.25em] mb-4"
@@ -122,7 +109,6 @@ export default function LoginPage() {
               Your AI waiter takes orders, upsells naturally, handles allergen checks, and keeps guests engaged — all from a QR scan.
             </p>
 
-            {/* Stats grid */}
             <div className="grid grid-cols-2 gap-3 mt-10 max-w-sm">
               {STATS.map(({ icon: Icon, value, label }) => (
                 <div
@@ -145,7 +131,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Testimonial */}
           <div
             className="rounded-2xl p-5"
             style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
@@ -172,7 +157,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Tagline */}
           <p
             className="mt-6 text-xs font-semibold tracking-[0.3em] uppercase"
             style={{ color: "rgba(198,163,78,0.6)" }}
@@ -187,7 +171,6 @@ export default function LoginPage() {
         className="flex-1 flex flex-col"
         style={{ background: "#FAF6ED" }}
       >
-        {/* Back to website */}
         <div className="px-8 pt-8">
           <Link
             href="/"
@@ -201,11 +184,9 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {/* Form container */}
         <div className="flex-1 flex items-center justify-center px-8 py-10">
           <div className="w-full max-w-[400px]">
 
-            {/* Mobile logo (hidden on desktop since left panel has it) */}
             <div className="lg:hidden mb-8 flex justify-center">
               <Image
                 src="/photos/logo-trimmed.png"
@@ -218,7 +199,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Heading */}
             <div className="mb-8">
               <h2
                 className="text-3xl font-black uppercase tracking-wide leading-none mb-2"
@@ -234,7 +214,6 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Form card */}
             <div
               className="rounded-2xl px-8 py-8 shadow-sm"
               style={{
@@ -254,11 +233,7 @@ export default function LoginPage() {
                     autoComplete="email"
                     placeholder="you@restaurant.com"
                     className="smt-input w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
-                    style={{
-                      background: "#FAF6ED",
-                      border: "1.5px solid #F0E8D6",
-                      color: "#1B2A4A",
-                    }}
+                    style={{ background: "#FAF6ED", border: "1.5px solid #F0E8D6", color: "#1B2A4A" }}
                     {...register("email")}
                   />
                   {errors.email && (
@@ -272,17 +247,22 @@ export default function LoginPage() {
                     <label className="block text-xs font-semibold uppercase tracking-wider" style={{ color: "#1B2A4A" }}>
                       Password
                     </label>
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-xs font-medium transition-colors"
+                      style={{ color: "#C6A34E" }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#A8873A")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#C6A34E")}
+                    >
+                      Forgot password?
+                    </Link>
                   </div>
                   <input
                     type="password"
                     autoComplete="current-password"
                     placeholder="••••••••"
                     className="smt-input w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
-                    style={{
-                      background: "#FAF6ED",
-                      border: "1.5px solid #F0E8D6",
-                      color: "#1B2A4A",
-                    }}
+                    style={{ background: "#FAF6ED", border: "1.5px solid #F0E8D6", color: "#1B2A4A" }}
                     {...register("password")}
                   />
                   {errors.password && (
@@ -316,7 +296,6 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              {/* Divider */}
               <div className="my-6 flex items-center gap-3">
                 <div className="h-px flex-1" style={{ background: "#F0E8D6" }} />
                 <span className="text-xs" style={{ color: "#8B7355" }}>or</span>
@@ -337,7 +316,6 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Footer */}
             <p className="mt-6 text-center text-xs leading-relaxed" style={{ color: "#8B7355" }}>
               By signing in you agree to our{" "}
               <span className="font-medium" style={{ color: "#1B2A4A" }}>Terms of Service</span>

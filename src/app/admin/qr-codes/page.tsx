@@ -1,6 +1,7 @@
+import { getRequiredSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { prisma } from "@/lib/db";
 import { generateTableQR } from "@/lib/qr-generator";
 import { QrCodesPageClient, type QrTable } from "@/components/admin/QrCodesPageClient";
@@ -8,7 +9,7 @@ import { QrCodesPageClient, type QrTable } from "@/components/admin/QrCodesPageC
 export const dynamic = "force-dynamic";
 
 export default async function QrCodesPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getRequiredSession();
 
   if (!session?.user.restaurantId) {
     redirect("/auth/login");

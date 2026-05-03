@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
+import { createBrowserClient } from "@/lib/supabase";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   LayoutDashboard,
@@ -212,11 +212,13 @@ function UserFooter({
   userEmail,
   userRole,
   collapsed,
+  onSignOut,
 }: {
   userName: string;
   userEmail: string;
   userRole: string;
   collapsed: boolean;
+  onSignOut: () => void;
 }) {
   const roleLabel = userRole.replace("restaurant_", "");
 
@@ -224,7 +226,7 @@ function UserFooter({
     return (
       <div className="border-t border-ra-border p-3 flex justify-center">
         <button
-          onClick={() => signOut({ callbackUrl: "/auth/login" })}
+          onClick={onSignOut}
           title="Sign out"
           className="flex h-9 w-9 items-center justify-center rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
         >
@@ -291,7 +293,7 @@ function UserFooter({
 
       {/* Sign Out — clearly visible red button */}
       <button
-        onClick={() => signOut({ callbackUrl: "/auth/login" })}
+        onClick={onSignOut}
         className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
       >
         <LogOut className="h-4 w-4" />
@@ -313,6 +315,7 @@ function SidebarContent({
   userEmail,
   collapsed,
   onClose,
+  onSignOut,
 }: {
   restaurantName: string;
   pendingOrdersCount: number;
@@ -321,6 +324,7 @@ function SidebarContent({
   userEmail: string;
   collapsed: boolean;
   onClose?: () => void;
+  onSignOut: () => void;
 }) {
   const pathname = usePathname();
 
@@ -373,6 +377,7 @@ function SidebarContent({
         userEmail={userEmail}
         userRole={userRole}
         collapsed={collapsed}
+        onSignOut={onSignOut}
       />
     </div>
   );
@@ -390,6 +395,14 @@ export function AdminSidebar({
   userEmail,
 }: AdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const router = useRouter();
+
+  async function handleSignOut() {
+    const supabase = createBrowserClient();
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+    router.refresh();
+  }
 
   return (
     <>
@@ -426,6 +439,7 @@ export function AdminSidebar({
           userEmail={userEmail}
           collapsed={false}
           onClose={() => setMobileOpen(false)}
+          onSignOut={handleSignOut}
         />
       </div>
 
@@ -441,6 +455,7 @@ export function AdminSidebar({
           userName={userName}
           userEmail={userEmail}
           collapsed={true}
+          onSignOut={handleSignOut}
         />
       </div>
 
@@ -456,6 +471,7 @@ export function AdminSidebar({
           userName={userName}
           userEmail={userEmail}
           collapsed={false}
+          onSignOut={handleSignOut}
         />
       </div>
     </>

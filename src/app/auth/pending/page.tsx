@@ -65,7 +65,7 @@ export default function PendingPage() {
             <Mail className="mt-0.5 h-4 w-4 shrink-0 text-cu-accent" />
             <p className="text-sm text-cu-muted leading-snug">
               Keep an eye on your inbox. You&apos;ll get an email from{" "}
-              <span className="text-cu-text font-medium">hello@servemytable.com</span>{" "}
+              <span className="text-cu-text font-medium">hello@servemytable.ca</span>{" "}
               with your activation link.
             </p>
           </div>
@@ -80,7 +80,7 @@ export default function PendingPage() {
             Back to sign in
           </Link>
           <a
-            href="mailto:hello@servemytable.com"
+            href="mailto:hello@servemytable.ca"
             className="text-sm text-cu-muted hover:text-cu-accent transition-colors"
           >
             Questions? Contact support

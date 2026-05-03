@@ -8,42 +8,18 @@ export type UserRole =
   | "restaurant_manager";
 
 // ---------------------------------------------------------------------------
-// NextAuth module augmentation
-// Extends Session and JWT to carry our custom fields.
+// App session — returned by getRequiredSession() in lib/auth.ts
+// Identical shape to the old NextAuth session so all callers are unchanged.
 // ---------------------------------------------------------------------------
-import "next-auth";
-import "next-auth/jwt";
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      role: UserRole;
-      restaurantId: string | null;
-      restaurantSlug: string | null;
-    };
-  }
-
-  // Extend the User returned from authorize()
-  interface User {
+export interface AppSession {
+  user: {
     id: string;
     email: string;
     name: string;
     role: UserRole;
     restaurantId: string | null;
     restaurantSlug: string | null;
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    role: UserRole;
-    restaurantId: string | null;
-    restaurantSlug: string | null;
-  }
+  };
 }
 
 // ---------------------------------------------------------------------------

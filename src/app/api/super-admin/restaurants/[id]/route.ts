@@ -1,7 +1,8 @@
+import { getRequiredSession } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { prisma } from "@/lib/db";
 
 // ---------------------------------------------------------------------------
@@ -23,7 +24,7 @@ const updateSchema = z.object({
 type Ctx = { params: Promise<{ id: string }> };
 
 async function guard() {
-  const session = await getServerSession(authOptions);
+  const session = await getRequiredSession();
   if (!session || session.user.role !== "super_admin") return null;
   return session;
 }

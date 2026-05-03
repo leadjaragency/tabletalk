@@ -13,12 +13,13 @@ import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 
 export default async function RootPage() {
-  const session = await getRequiredSession();
-
-  if (session) {
+  try {
+    const session = await getRequiredSession();
     const { role } = session.user;
     if (role === "super_admin") redirect("/super-admin");
     if (role === "restaurant_owner" || role === "restaurant_manager") redirect("/admin");
+  } catch {
+    // Not logged in — show landing page
   }
 
   return (

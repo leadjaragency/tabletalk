@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Clock, AlertTriangle, CheckCircle2, ChevronRight,
-  Wifi, WifiOff, RefreshCw, Utensils,
+  Wifi, WifiOff, RefreshCw, Utensils, Download, X,
 } from "lucide-react";
 import { cn, formatTimeAgo, formatCurrency } from "@/lib/utils";
 import { OrderStatusBadge } from "@/components/ui/StatusBadge";
@@ -407,6 +407,23 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
+  // Export state
+  const today   = new Date().toISOString().slice(0, 10);
+  const ago30   = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const [exportOpen,    setExportOpen]    = useState(false);
+  const [exportFrom,    setExportFrom]    = useState(ago30);
+  const [exportTo,      setExportTo]      = useState(today);
+  const [exporting,     setExporting]     = useState(false);
+
+  function handleExport() {
+    setExporting(true);
+    const url = `/api/orders/export?from=${exportFrom}&to=${exportTo}`;
+    const a   = document.createElement("a");
+    a.href    = url;
+    a.click();
+    setTimeout(() => setExporting(false), 1500);
+  }
+
   const prevOrderIdsRef = useRef<Set<string>>(new Set(initialOrders.map((o) => o.id)));
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -499,24 +516,79 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
 
       <div className="p-6 lg:p-8 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-bold text-ra-text">Live Orders</h1>
             <p className="text-sm text-ra-muted mt-0.5">
               {activeCount} active · refreshed {formatTimeAgo(lastRefresh)}
             </p>
           </div>
-          <button
-            onClick={handleManualRefresh}
-            className={cn(
-              "rounded-lg p-2 text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-all",
-              refreshing && "animate-spin text-ra-accent"
-            )}
-            title="Refresh now"
-          >
-            <RefreshCw size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setExportOpen((o) => !o)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+                exportOpen
+                  ? "border-ra-accent/50 bg-ra-accent/10 text-ra-accent"
+                  : "border-ra-border text-ra-muted hover:text-ra-text hover:border-ra-accent/40"
+              )}
+            >
+              <Download size={13} />
+              Export CSV
+            </button>
+            <button
+              onClick={handleManualRefresh}
+              className={cn(
+                "rounded-lg p-2 text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-all",
+                refreshing && "animate-spin text-ra-accent"
+              )}
+              title="Refresh now"
+            >
+              <RefreshCw size={16} />
+            </button>
+          </div>
         </div>
+
+        {/* Export panel */}
+        {exportOpen && (
+          <div className="rounded-xl border border-ra-accent/30 bg-ra-surface p-4 flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ra-muted mb-1">From</label>
+              <input
+                type="date"
+                value={exportFrom}
+                max={exportTo}
+                onChange={(e) => setExportFrom(e.target.value)}
+                className="rounded-lg border border-ra-border bg-ra-bg px-3 py-1.5 text-sm text-ra-text focus:outline-none focus:ring-2 focus:ring-ra-accent/30"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ra-muted mb-1">To</label>
+              <input
+                type="date"
+                value={exportTo}
+                min={exportFrom}
+                max={today}
+                onChange={(e) => setExportTo(e.target.value)}
+                className="rounded-lg border border-ra-border bg-ra-bg px-3 py-1.5 text-sm text-ra-text focus:outline-none focus:ring-2 focus:ring-ra-accent/30"
+              />
+            </div>
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex items-center gap-1.5 rounded-lg bg-ra-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 hover:opacity-90 transition-opacity"
+            >
+              <Download size={14} />
+              {exporting ? "Downloading…" : "Download CSV"}
+            </button>
+            <button
+              onClick={() => setExportOpen(false)}
+              className="ml-auto rounded-lg p-1.5 text-ra-muted hover:text-ra-text"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {/* Pipeline summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

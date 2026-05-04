@@ -1,9 +1,8 @@
 import { getRequiredSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-
 import { prisma } from "@/lib/db";
 import { TrendingUp, Star, Gamepad2, ShoppingBag } from "lucide-react";
+import { RevenueExportButton } from "@/components/admin/RevenueExportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -124,9 +123,12 @@ export default async function AdminAnalyticsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-ra-text">Analytics</h1>
-        <p className="mt-1 text-sm text-ra-muted">Performance overview for the last 7 days</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-ra-text">Analytics</h1>
+          <p className="mt-1 text-sm text-ra-muted">Performance overview for the last 7 days</p>
+        </div>
+        <RevenueExportButton />
       </div>
 
       {/* Stat cards */}

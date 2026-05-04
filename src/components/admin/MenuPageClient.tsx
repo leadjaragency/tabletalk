@@ -441,13 +441,24 @@ function ParsePreviewModal({
   }
 
   const selectedCount = rows.filter((r) => r.selected).length;
+  const newCatCount = new Set(
+    rows
+      .filter((r) => r.selected && r.category && !categories.find(
+        (c) => c.name.toLowerCase() === r.category.toLowerCase()
+      ))
+      .map((r) => r.category.toLowerCase())
+  ).size;
 
   return (
     <Modal
       open
       onOpenChange={(o) => !o && onClose()}
       title={`Review Extracted Dishes (${extracted.length} found)`}
-      description="Select which dishes to import and confirm their categories."
+      description={
+        newCatCount > 0
+          ? `${newCatCount} new categor${newCatCount === 1 ? "y" : "ies"} will be created automatically. Just click Import — no manual setup needed.`
+          : "Select which dishes to import and confirm their categories."
+      }
       contentClassName="bg-ra-surface border-ra-border text-ra-text"
       size="lg"
       footer={
@@ -521,24 +532,25 @@ function ParsePreviewModal({
                 <td className="px-3 py-2.5">
                   {row.category && !categories.find(
                     (c) => c.name.toLowerCase() === row.category.toLowerCase()
-                  ) && (
-                    <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 mb-1">
-                      NEW
-                    </span>
-                  )}
-                  <select
-                    value={row.categoryId}
-                    onChange={(e) => setCategoryId(i, e.target.value)}
-                    className="w-full rounded-lg border border-ra-border bg-ra-bg px-2 py-1 text-xs text-ra-text focus:border-ra-accent/50 focus:outline-none"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                  {row.category && (
-                    <p className="mt-0.5 text-[10px] text-ra-muted truncate">
-                      from menu: {row.category}
-                    </p>
+                  ) ? (
+                    // Category doesn't exist yet — will be auto-created on import
+                    <div>
+                      <p className="text-xs font-medium text-ra-text truncate">{row.category}</p>
+                      <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 mt-0.5">
+                        NEW — auto-created on import
+                      </span>
+                    </div>
+                  ) : (
+                    // Category already exists — show dropdown pre-selected
+                    <select
+                      value={row.categoryId}
+                      onChange={(e) => setCategoryId(i, e.target.value)}
+                      className="w-full rounded-lg border border-ra-border bg-ra-bg px-2 py-1 text-xs text-ra-text focus:border-ra-accent/50 focus:outline-none"
+                    >
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
                   )}
                 </td>
                 <td className="px-3 py-2.5 text-right font-mono text-ra-text">

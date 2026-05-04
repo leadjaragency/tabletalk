@@ -364,14 +364,49 @@ function ParsePreviewModal({
   }
 
   async function handleImport() {
-    const selected = rows.filter((r) => r.selected && r.categoryId);
+    const selected = rows.filter((r) => r.selected);
     if (!selected.length) return;
     setImporting(true);
     setError(null);
+
+    // Auto-create any category names that don't already exist
+    const newCategoryNames = [
+      ...new Set(
+        selected
+          .map((d) => d.category)
+          .filter((name) => name && !categories.find(
+            (c) => c.name.toLowerCase() === name.toLowerCase()
+          ))
+      ),
+    ];
+
+    const createdMap = new Map<string, string>(); // lowercase name → new id
+    for (const name of newCategoryNames) {
+      try {
+        const res = await fetch("/api/categories", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ name }),
+        });
+        if (res.ok) {
+          const cat = await res.json() as { id: string };
+          createdMap.set(name.toLowerCase(), cat.id);
+        }
+      } catch {
+        // continue — dish will fall back to row.categoryId
+      }
+    }
+
     setProgress({ done: 0, total: selected.length });
 
     let done = 0;
     for (const row of selected) {
+      // Prefer newly created category, then existing match, then dropdown selection
+      const categoryId =
+        createdMap.get(row.category.toLowerCase()) ??
+        categories.find((c) => c.name.toLowerCase() === row.category.toLowerCase())?.id ??
+        row.categoryId;
+
       try {
         await fetch("/api/menu", {
           method:  "POST",
@@ -380,7 +415,7 @@ function ParsePreviewModal({
             name:        row.name,
             description: row.description,
             price:       row.price,
-            categoryId:  row.categoryId,
+            categoryId,
             allergens:   row.allergens,
             spiceLevel:  row.spiceLevel,
             isVeg:       row.isVeg,
@@ -484,6 +519,13 @@ function ParsePreviewModal({
                   )}
                 </td>
                 <td className="px-3 py-2.5">
+                  {row.category && !categories.find(
+                    (c) => c.name.toLowerCase() === row.category.toLowerCase()
+                  ) && (
+                    <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 mb-1">
+                      NEW
+                    </span>
+                  )}
                   <select
                     value={row.categoryId}
                     onChange={(e) => setCategoryId(i, e.target.value)}

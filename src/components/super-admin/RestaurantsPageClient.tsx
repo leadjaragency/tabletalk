@@ -4,16 +4,14 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Search, Plus, ChevronDown, ExternalLink,
-  MoreHorizontal, AlertCircle,
+  Search, Plus, ExternalLink,
+  AlertCircle, AlertTriangle, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { RestaurantStatusBadge, TierBadge } from "@/components/ui/StatusBadge";
-import {
-  Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter,
-} from "@/components/ui/Modal";
-import { cn, formatDate, initials } from "@/lib/utils";
+import { RestaurantStatusBadge } from "@/components/ui/StatusBadge";
+import { Modal, ModalFooter } from "@/components/ui/Modal";
+import { cn, initials } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Shared types (mirrored from Prisma include shape)
@@ -275,18 +273,119 @@ function StatusToggle({
 }
 
 // ---------------------------------------------------------------------------
+// Purge (permanent delete) confirmation modal
+// ---------------------------------------------------------------------------
+
+function PurgeModal({
+  restaurant,
+  onClose,
+  onPurged,
+}: {
+  restaurant: RestaurantRow;
+  onClose: () => void;
+  onPurged: (id: string) => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+  const [confirm, setConfirm] = useState("");
+
+  async function purge() {
+    setError(null);
+    setLoading(true);
+    const res = await fetch(`/api/super-admin/restaurants/${restaurant.id}/purge`, {
+      method: "DELETE",
+    });
+    setLoading(false);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError((body as { error?: string }).error ?? "Failed to permanently delete restaurant.");
+      return;
+    }
+    onClose();
+    onPurged(restaurant.id);
+  }
+
+  const canDelete = confirm.trim().toLowerCase() === restaurant.name.toLowerCase();
+
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title="Permanently Delete Restaurant"
+      contentClassName="bg-sa-surface border-sa-border text-sa-text"
+    >
+      <div className="space-y-4">
+        <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="space-y-1">
+            <p className="font-semibold text-red-300">This cannot be undone.</p>
+            <p>This will permanently delete:</p>
+            <ul className="list-disc list-inside mt-1 space-y-0.5 text-red-400/80">
+              <li>All menu items, tables, and orders</li>
+              <li>All AI waiters, reviews, and promotions</li>
+              <li>All team member accounts</li>
+              <li>The owner&apos;s login — they can never sign in again</li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-sa-text/80 mb-1.5">
+            Type <strong className="text-sa-text">{restaurant.name}</strong> to confirm
+          </label>
+          <input
+            type="text"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder={restaurant.name}
+            className="w-full rounded-lg border border-sa-border bg-sa-bg px-3 py-2 text-sm text-sa-text placeholder:text-sa-muted/40 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+          />
+        </div>
+
+        {error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
+      </div>
+
+      <ModalFooter className="border-t border-sa-border">
+        <Button variant="ghost" onClick={onClose} className="text-sa-muted">Cancel</Button>
+        <Button
+          variant="danger"
+          loading={loading}
+          disabled={!canDelete}
+          onClick={purge}
+          leftIcon={<Trash2 className="h-4 w-4" />}
+        >
+          Permanently delete
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main client component
 // ---------------------------------------------------------------------------
 
-export function RestaurantsPageClient({ restaurants, tiers }: Props) {
-  const [q, setQ]                   = useState("");
-  const [statusFilter, setStatus]   = useState("");
+export function RestaurantsPageClient({ restaurants: initial, tiers }: Props) {
+  const [rows, setRows]              = useState<RestaurantRow[]>(initial);
+  const [q, setQ]                    = useState("");
+  const [statusFilter, setStatus]    = useState("");
   const [addOpen, setAddOpen]        = useState(false);
+  const [purgeTarget, setPurgeTarget] = useState<RestaurantRow | null>(null);
+
+  // Remove a purged restaurant from local state immediately (no page reload)
+  function handlePurged(id: string) {
+    setRows((prev) => prev.filter((r) => r.id !== id));
+  }
 
   // Client-side filtering
   const filtered = useMemo(() => {
     const query = q.toLowerCase();
-    return restaurants.filter((r) => {
+    return rows.filter((r) => {
       const matchStatus = !statusFilter || r.status === statusFilter;
       const matchQ =
         !query ||
@@ -295,16 +394,16 @@ export function RestaurantsPageClient({ restaurants, tiers }: Props) {
         r.cuisine.toLowerCase().includes(query);
       return matchStatus && matchQ;
     });
-  }, [restaurants, q, statusFilter]);
+  }, [rows, q, statusFilter]);
 
   // Counts per status for tab labels
   const counts = useMemo(() => {
-    const m: Record<string, number> = { "": restaurants.length };
-    for (const r of restaurants) {
+    const m: Record<string, number> = { "": rows.length };
+    for (const r of rows) {
       m[r.status] = (m[r.status] ?? 0) + 1;
     }
     return m;
-  }, [restaurants]);
+  }, [rows]);
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8 space-y-6">
@@ -313,7 +412,7 @@ export function RestaurantsPageClient({ restaurants, tiers }: Props) {
         <div>
           <h1 className="font-display text-2xl font-bold text-sa-text">Restaurants</h1>
           <p className="mt-1 text-sm text-sa-muted">
-            {restaurants.length} restaurant{restaurants.length !== 1 ? "s" : ""} on the platform
+            {rows.length} restaurant{rows.length !== 1 ? "s" : ""} on the platform
           </p>
         </div>
         <Button
@@ -464,6 +563,15 @@ export function RestaurantsPageClient({ restaurants, tiers }: Props) {
                           View <ExternalLink className="h-3 w-3" />
                         </Link>
                         <StatusToggle restaurantId={r.id} status={r.status} />
+                        {(r.status === "disabled" || r.status === "suspended") && (
+                          <button
+                            onClick={() => setPurgeTarget(r)}
+                            title="Permanently delete this restaurant"
+                            className="flex items-center justify-center rounded-md border border-red-500/30 bg-red-500/10 p-1.5 text-red-400 hover:bg-red-500/20 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -477,7 +585,7 @@ export function RestaurantsPageClient({ restaurants, tiers }: Props) {
         {filtered.length > 0 && (
           <div className="border-t border-sa-border px-4 py-3">
             <p className="text-xs text-sa-muted">
-              Showing {filtered.length} of {restaurants.length} restaurants
+              Showing {filtered.length} of {rows.length} restaurants
             </p>
           </div>
         )}
@@ -489,6 +597,15 @@ export function RestaurantsPageClient({ restaurants, tiers }: Props) {
         onClose={() => setAddOpen(false)}
         tiers={tiers}
       />
+
+      {/* Permanent Delete Modal */}
+      {purgeTarget && (
+        <PurgeModal
+          restaurant={purgeTarget}
+          onClose={() => setPurgeTarget(null)}
+          onPurged={handlePurged}
+        />
+      )}
     </div>
   );
 }

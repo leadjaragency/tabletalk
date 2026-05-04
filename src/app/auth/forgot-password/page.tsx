@@ -5,12 +5,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Mail } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
+import { useSearchParams } from "next/navigation";
 
 export default function ForgotPasswordPage() {
+  const searchParams = useSearchParams();
+  const linkExpired = searchParams.get("error") === "link_expired";
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(linkExpired ? "Your reset link has expired. Enter your email to get a new one." : null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -20,7 +23,7 @@ export default function ForgotPasswordPage() {
 
     const supabase = createBrowserClient();
     const { error: sbError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${window.location.origin}/api/auth/callback?next=/auth/reset-password`,
     });
 
     setLoading(false);

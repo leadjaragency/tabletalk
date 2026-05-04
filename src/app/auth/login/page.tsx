@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,6 +25,9 @@ const STATS = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const resetSuccess = searchParams.get("reset") === "success";
+  const invalidLink = searchParams.get("error") === "invalid_link";
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -213,6 +216,24 @@ export default function LoginPage() {
                 Sign in to your ServeMyTable dashboard
               </p>
             </div>
+
+            {resetSuccess && (
+              <div
+                className="mb-5 rounded-xl px-4 py-3 text-sm"
+                style={{ background: "#F0FDF4", border: "1px solid #86EFAC", color: "#166534" }}
+              >
+                Password updated successfully. Sign in with your new password.
+              </div>
+            )}
+
+            {invalidLink && (
+              <div
+                className="mb-5 rounded-xl px-4 py-3 text-sm"
+                style={{ background: "#FEF2F2", border: "1px solid #FECACA", color: "#C04525" }}
+              >
+                This reset link is invalid or has expired. Please request a new one.
+              </div>
+            )}
 
             <div
               className="rounded-2xl px-8 py-8 shadow-sm"

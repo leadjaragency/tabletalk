@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,11 +23,29 @@ const STATS = [
   { icon: Star,       value: "4.9",   label: "Avg. rating" },
 ];
 
-export default function LoginPage() {
-  const router = useRouter();
+function LoginBanners() {
   const searchParams = useSearchParams();
   const resetSuccess = searchParams.get("reset") === "success";
-  const invalidLink = searchParams.get("error") === "invalid_link";
+  const invalidLink  = searchParams.get("error") === "invalid_link";
+  if (!resetSuccess && !invalidLink) return null;
+  return (
+    <>
+      {resetSuccess && (
+        <div className="mb-5 rounded-xl px-4 py-3 text-sm" style={{ background: "#F0FDF4", border: "1px solid #86EFAC", color: "#166534" }}>
+          <strong>Password updated!</strong> Your old password no longer works — please sign in with your new password below.
+        </div>
+      )}
+      {invalidLink && (
+        <div className="mb-5 rounded-xl px-4 py-3 text-sm" style={{ background: "#FEF2F2", border: "1px solid #FECACA", color: "#C04525" }}>
+          This reset link is invalid or has expired. Please request a new one.
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function LoginPage() {
+  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -217,23 +235,9 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {resetSuccess && (
-              <div
-                className="mb-5 rounded-xl px-4 py-3 text-sm"
-                style={{ background: "#F0FDF4", border: "1px solid #86EFAC", color: "#166534" }}
-              >
-                <strong>Password updated!</strong> Your old password no longer works — please sign in with your new password below.
-              </div>
-            )}
-
-            {invalidLink && (
-              <div
-                className="mb-5 rounded-xl px-4 py-3 text-sm"
-                style={{ background: "#FEF2F2", border: "1px solid #FECACA", color: "#C04525" }}
-              >
-                This reset link is invalid or has expired. Please request a new one.
-              </div>
-            )}
+            <Suspense fallback={null}>
+              <LoginBanners />
+            </Suspense>
 
             <div
               className="rounded-2xl px-8 py-8 shadow-sm"

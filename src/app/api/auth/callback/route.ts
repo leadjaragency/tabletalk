@@ -16,6 +16,12 @@ export async function GET(req: NextRequest) {
   }
 
   if (code) {
+    // For password reset: pass code to the page so the browser client exchanges it.
+    // This avoids server→browser session sync issues with updateUser.
+    if (next === "/auth/reset-password") {
+      return NextResponse.redirect(`${origin}/auth/reset-password?code=${code}`);
+    }
+
     const supabase = await createServerSupabaseClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {

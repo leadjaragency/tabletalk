@@ -169,6 +169,35 @@ export async function sendApprovalEmail(opts: {
 }
 
 // ---------------------------------------------------------------------------
+// sendPasswordChangedEmail — sent after a successful password reset
+// ---------------------------------------------------------------------------
+export async function sendPasswordChangedEmail(opts: {
+  to: string;
+  name: string;
+}) {
+  const loginUrl = `${APP_URL}/auth/login`;
+
+  const body = `
+    ${h1("Password updated")}
+    ${p(`Hi ${opts.name}, your ServeMyTable password was just changed successfully.`)}
+    ${p("You can now sign in using your new password.")}
+
+    ${goldBtn(loginUrl, "Sign in to your dashboard")}
+
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin-top:28px;">${divider()}</table>
+
+    ${p('If you did not make this change, please contact us immediately at <a href="mailto:hello@servemytable.ca" style="color:#C6A34E;">hello@servemytable.ca</a> so we can secure your account.')}
+  `;
+
+  return resend.emails.send({
+    from: FROM,
+    to: opts.to,
+    subject: "Your ServeMyTable password has been updated",
+    html: wrap(body),
+  });
+}
+
+// ---------------------------------------------------------------------------
 // sendTrialWarningEmail — sent 3 days before trial expiry
 // ---------------------------------------------------------------------------
 export async function sendTrialWarningEmail(opts: {

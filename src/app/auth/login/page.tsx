@@ -222,7 +222,7 @@ export default function LoginPage() {
                 className="mb-5 rounded-xl px-4 py-3 text-sm"
                 style={{ background: "#F0FDF4", border: "1px solid #86EFAC", color: "#166534" }}
               >
-                Password updated successfully. Sign in with your new password.
+                <strong>Password updated!</strong> Your old password no longer works — please sign in with your new password below.
               </div>
             )}
 

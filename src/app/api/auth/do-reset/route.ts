@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { supabaseAdmin } from "@/lib/supabase-server";
 import { sendPasswordChangedEmail } from "@/lib/email";
-import prisma from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { z } from "zod";
 
 const schema = z.object({

@@ -5,14 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Star, UtensilsCrossed, Users, LayoutGrid,
-  ShoppingBag, MessageSquare, AlertTriangle, ExternalLink,
-  CheckCircle2, XCircle, Trash2, Globe, AlertCircle,
+  ShoppingBag, AlertTriangle, ExternalLink,
+  Trash2, Globe, AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { RestaurantStatusBadge, TierBadge } from "@/components/ui/StatusBadge";
-import {
-  Modal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter,
-} from "@/components/ui/Modal";
+import { Modal, ModalFooter } from "@/components/ui/Modal";
 import { formatDate, initials } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -176,10 +174,10 @@ function ChangeTierModal({
 }
 
 // ---------------------------------------------------------------------------
-// Delete Confirmation Modal
+// Permanent Delete Confirmation Modal
 // ---------------------------------------------------------------------------
 
-function DeleteModal({
+function PurgeModal({
   restaurant,
   onClose,
 }: {
@@ -191,16 +189,16 @@ function DeleteModal({
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState("");
 
-  async function del() {
+  async function purge() {
     setError(null);
     setLoading(true);
-    const res = await fetch(`/api/super-admin/restaurants/${restaurant.id}`, {
+    const res = await fetch(`/api/super-admin/restaurants/${restaurant.id}/purge`, {
       method: "DELETE",
     });
     setLoading(false);
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setError((body as { error?: string }).error ?? "Failed to remove restaurant.");
+      setError((body as { error?: string }).error ?? "Failed to permanently delete restaurant.");
       return;
     }
     onClose();
@@ -213,17 +211,23 @@ function DeleteModal({
     <Modal
       open
       onOpenChange={(o) => !o && onClose()}
-      title="Remove Restaurant"
-      description="This will disable the restaurant and deactivate all associated accounts. This action cannot be undone."
+      title="Permanently Delete Restaurant"
       contentClassName="bg-sa-surface border-sa-border text-sa-text"
     >
       <div className="space-y-4">
-        <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+        <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            Active restaurants cannot be deleted. You must disable the restaurant first.
-            All team members will lose access immediately.
-          </p>
+          <div className="space-y-1">
+            <p className="font-semibold text-red-300">This cannot be undone.</p>
+            <p>This will permanently delete:</p>
+            <ul className="list-disc list-inside mt-1 space-y-0.5 text-red-400/80">
+              <li>All menu items, categories, and dishes</li>
+              <li>All tables, orders, and order history</li>
+              <li>All AI waiters, reviews, and promotions</li>
+              <li>All team member accounts</li>
+              <li>The owner&apos;s login — they will never be able to sign in again</li>
+            </ul>
+          </div>
         </div>
 
         <div>
@@ -253,10 +257,10 @@ function DeleteModal({
           variant="danger"
           loading={loading}
           disabled={!canDelete}
-          onClick={del}
+          onClick={purge}
           leftIcon={<Trash2 className="h-4 w-4" />}
         >
-          Remove permanently
+          Permanently delete
         </Button>
       </ModalFooter>
     </Modal>
@@ -468,7 +472,7 @@ export function RestaurantDetailView({
         />
       )}
       {deleteModalOpen && (
-        <DeleteModal
+        <PurgeModal
           restaurant={restaurant}
           onClose={() => setDeleteModal(false)}
         />

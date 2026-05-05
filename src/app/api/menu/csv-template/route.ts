@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // GET /api/menu/csv-template
 // Returns a downloadable CSV template pre-filled with example rows.
 

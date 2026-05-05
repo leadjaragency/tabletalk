@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Plus, Users, QrCode, MessageSquare, ChevronRight, X,
   Clock, Utensils, Trash2, UserCheck, RefreshCw, RotateCcw,
-  Gamepad2, Receipt,
+  Gamepad2, Receipt, Link2, Link2Off, Crown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
@@ -67,6 +67,11 @@ interface Session {
   dietaryPrefs: string[];
 }
 
+interface MergeRef {
+  id:     string;
+  number: number;
+}
+
 interface Table {
   id:           string;
   number:       number;
@@ -74,6 +79,9 @@ interface Table {
   status:       string;
   qrCode:       string | null;
   waiter:       Waiter | null;
+  mergedIntoId: string | null;
+  mergedInto:   MergeRef | null;
+  mergedTables: MergeRef[];
   orders:       Order[];
   sessions:     Session[];
   restaurantId: string;
@@ -409,6 +417,270 @@ function ResetTableModal({
 }
 
 // ---------------------------------------------------------------------------
+// Merge Tables Modal
+// ---------------------------------------------------------------------------
+
+function MergeTablesModal({
+  tables,
+  onClose,
+}: {
+  tables:  Table[];
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [selectedIds,   setSelectedIds]   = useState<Set<string>>(new Set());
+  const [primaryId,     setPrimaryId]     = useState<string>("");
+  const [error,         setError]         = useState<string | null>(null);
+  const [merging,       setMerging]       = useState(false);
+
+  // Only show tables that are empty and not already merged into something
+  const eligible = tables.filter(
+    (t) => t.status === "empty" && !t.mergedIntoId && t.mergedTables.length === 0
+  );
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        if (primaryId === id) setPrimaryId("");
+      } else {
+        next.add(id);
+        if (!primaryId) setPrimaryId(id);
+      }
+      return next;
+    });
+    setError(null);
+  }
+
+  const selectedArr = [...selectedIds];
+  const canMerge    = selectedArr.length >= 2 && !!primaryId;
+
+  async function handleMerge() {
+    if (!canMerge) return;
+    setMerging(true);
+    setError(null);
+    try {
+      const secondaryIds = selectedArr.filter((id) => id !== primaryId);
+      const res = await fetch("/api/tables/merge", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ primaryTableId: primaryId, secondaryTableIds: secondaryIds }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? "Failed to merge tables.");
+      }
+      const primary = tables.find((t) => t.id === primaryId);
+      const secondary = tables.filter((t) => secondaryIds.includes(t.id));
+      toast.success(
+        `Tables ${[primary, ...secondary].map((t) => `T${t?.number}`).join(" + ")} merged successfully.`
+      );
+      onClose();
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setMerging(false);
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title="Merge Tables"
+      description="Combine tables so a large group shares one session and one combined order."
+      contentClassName="bg-ra-surface border-ra-border text-ra-text"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="text-xs text-red-400">{error ?? ""}</div>
+          <div className="flex gap-3">
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={merging}>Cancel</Button>
+            <Button
+              variant="amber"
+              size="sm"
+              loading={merging}
+              disabled={!canMerge}
+              onClick={handleMerge}
+              leftIcon={<Link2 size={13} />}
+            >
+              Merge {selectedArr.length >= 2 ? `${selectedArr.length} Tables` : "Tables"}
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {eligible.length < 2 ? (
+          <p className="text-sm text-ra-muted text-center py-4">
+            You need at least 2 empty, unmerged tables to merge. Tables must be empty before merging.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-ra-muted">
+              Select 2 or more tables, then choose which one is the <strong className="text-ra-text">primary</strong> (the one that holds the session and orders).
+              Customers scanning any merged table&apos;s QR will join the same session.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2">
+              {eligible.map((t) => {
+                const isSelected = selectedIds.has(t.id);
+                const isPrimary  = primaryId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => toggleSelect(t.id)}
+                    className={cn(
+                      "relative rounded-xl border-2 p-3 text-left transition-all",
+                      isSelected
+                        ? "border-ra-accent bg-ra-accent/10"
+                        : "border-ra-border bg-ra-bg hover:border-ra-accent/40"
+                    )}
+                  >
+                    {isSelected && (
+                      <span className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-ra-accent flex items-center justify-center">
+                        <span className="text-[9px] text-black font-bold">✓</span>
+                      </span>
+                    )}
+                    <div className="text-xl font-display font-bold text-ra-text">{t.number}</div>
+                    <div className="text-[10px] text-ra-muted mt-0.5">{t.seats} seats</div>
+                    {t.waiter && (
+                      <div className="text-[10px] text-ra-muted truncate">{t.waiter.avatar} {t.waiter.name}</div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedArr.length >= 2 && (
+              <div>
+                <p className="text-xs font-medium text-ra-text mb-2">
+                  Which table is the primary? <span className="text-ra-muted font-normal">(holds the combined session)</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedArr.map((id) => {
+                    const t = tables.find((x) => x.id === id)!;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setPrimaryId(id)}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-all",
+                          primaryId === id
+                            ? "border-ra-accent bg-ra-accent/10 text-ra-text"
+                            : "border-ra-border text-ra-muted hover:border-ra-accent/40"
+                        )}
+                      >
+                        {primaryId === id && <Crown size={11} className="text-ra-accent" />}
+                        Table {t.number}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Unmerge Confirmation Modal
+// ---------------------------------------------------------------------------
+
+function UnmergeModal({
+  primaryTable,
+  onClose,
+}: {
+  primaryTable: Table;
+  onClose:      () => void;
+}) {
+  const router = useRouter();
+  const [error,      setError]      = useState<string | null>(null);
+  const [unmerging,  setUnmerging]  = useState(false);
+
+  const allNonEmpty = [primaryTable, ...primaryTable.mergedTables.map((m) => ({
+    ...m, status: "unknown",
+  }))].filter((t) => "status" in t && (t as Table).status !== "empty");
+
+  async function handleUnmerge(force = false) {
+    setUnmerging(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/tables/merge", {
+        method:  "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ primaryTableId: primaryTable.id, force }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? "Failed to unmerge tables.");
+      }
+      toast.success(`Tables unmerged. Each table is now independent again.`);
+      onClose();
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setUnmerging(false);
+    }
+  }
+
+  const groupNums = [primaryTable.number, ...primaryTable.mergedTables.map((m) => m.number)]
+    .sort((a, b) => a - b)
+    .map((n) => `T${n}`)
+    .join(" + ");
+
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title="Unmerge Table Group"
+      description={`Split ${groupNums} back into independent tables.`}
+      contentClassName="bg-ra-surface border-ra-border text-ra-text"
+      size="sm"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="text-xs text-red-400">{error ?? ""}</div>
+          <div className="flex gap-3">
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={unmerging}>Cancel</Button>
+            {primaryTable.status !== "empty" ? (
+              <Button variant="danger" size="sm" loading={unmerging} onClick={() => handleUnmerge(true)}>
+                Force Unmerge
+              </Button>
+            ) : (
+              <Button variant="amber" size="sm" loading={unmerging} onClick={() => handleUnmerge(false)}
+                leftIcon={<Link2Off size={13} />}>
+                Unmerge
+              </Button>
+            )}
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-3 text-sm text-ra-muted">
+        <p>
+          This will separate{" "}
+          <span className="font-semibold text-ra-text">{groupNums}</span> back into
+          individual tables. Each will have its own independent session going forward.
+        </p>
+        {allNonEmpty.length > 0 && primaryTable.status !== "empty" && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-400 text-xs">
+            ⚠ Table {primaryTable.number} is currently active. Force unmerge will separate the tables but the active session remains on Table {primaryTable.number}.
+          </div>
+        )}
+        <p className="text-xs text-ra-muted/60">
+          Existing orders and chat history are preserved.
+        </p>
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Table Slide-Over Panel
 // ---------------------------------------------------------------------------
 
@@ -419,6 +691,7 @@ function TableSlideOver({
   detailLoading,
   onClose,
   onReset,
+  onUnmerge,
 }: {
   table:         Table;
   waiters:       Waiter[];
@@ -426,6 +699,7 @@ function TableSlideOver({
   detailLoading: boolean;
   onClose:       () => void;
   onReset:       () => void;
+  onUnmerge:     () => void;
 }) {
   const router = useRouter();
 
@@ -506,6 +780,36 @@ function TableSlideOver({
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+          {/* ── Merge group info ───────────────────────────────────── */}
+          {(table.mergedIntoId || table.mergedTables.length > 0) && (
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ra-muted mb-3 flex items-center gap-1.5">
+                <Link2 size={12} /> Table Group
+              </h3>
+              <div className="rounded-xl border border-ra-accent/30 bg-ra-accent/5 p-4 space-y-2 text-sm">
+                {table.mergedIntoId ? (
+                  <p className="text-ra-muted">
+                    This table is <span className="text-ra-text font-semibold">merged into Table {table.mergedInto?.number}</span>.
+                    Customers scanning this QR join Table {table.mergedInto?.number}&apos;s session automatically.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-ra-muted">
+                      <Crown size={12} className="inline text-ra-accent mr-1" />
+                      <span className="text-ra-text font-semibold">Primary table</span> for a merged group.
+                    </p>
+                    <p className="text-ra-muted text-xs">
+                      Merged with:{" "}
+                      <span className="text-ra-text font-medium">
+                        {table.mergedTables.map((m) => `T${m.number}`).join(", ")}
+                      </span>
+                    </p>
+                  </>
+                )}
+              </div>
+            </section>
+          )}
 
           {/* ── Active session info ────────────────────────────────── */}
           {activeSession && (
@@ -717,6 +1021,19 @@ function TableSlideOver({
             Updated {formatTimeAgo(new Date(table.updatedAt))}
           </span>
           <div className="flex gap-2">
+            {/* Unmerge button — only on the primary table */}
+            {table.mergedTables.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-ra-accent hover:bg-ra-accent/10 gap-1.5 text-xs"
+                onClick={onUnmerge}
+                title="Unmerge table group"
+              >
+                <Link2Off size={13} />
+                Unmerge
+              </Button>
+            )}
             {table.status !== "empty" && (
               <Button
                 variant="ghost"
@@ -758,10 +1075,12 @@ function TableCard({
   onSelect: (t: Table) => void;
   onDelete: (t: Table) => void;
 }) {
-  const isActive    = table.status !== "empty";
-  const isBilling   = table.status === "billing";
-  const latestOrder = table.orders[0] ?? null;
-  const itemSummary = latestOrder?.items
+  const isMergedSecondary = !!table.mergedIntoId;
+  const isMergedPrimary   = table.mergedTables.length > 0;
+  const isActive          = table.status !== "empty";
+  const isBilling         = table.status === "billing";
+  const latestOrder       = table.orders[0] ?? null;
+  const itemSummary       = latestOrder?.items
     .map((i) => `${i.quantity}× ${i.dish.name}`)
     .join(", ");
 
@@ -771,14 +1090,16 @@ function TableCard({
         "relative rounded-2xl border bg-ra-surface cursor-pointer group",
         "border-l-4 transition-all duration-200",
         "hover:border-ra-accent/40 hover:shadow-lg hover:shadow-black/20",
-        statusAccent[table.status] ?? "border-l-ra-border",
-        isActive ? "border-ra-border/80" : "border-ra-border/40",
+        isMergedSecondary
+          ? "border-l-ra-accent/60 opacity-80"
+          : statusAccent[table.status] ?? "border-l-ra-border",
+        isActive && !isMergedSecondary ? "border-ra-border/80" : "border-ra-border/40",
         isBilling && "ring-2 ring-green-500/60 animate-pulse"
       )}
       onClick={() => onSelect(table)}
     >
       {/* Delete button (top-right, visible on hover) */}
-      {table.status === "empty" && (
+      {table.status === "empty" && !isMergedPrimary && (
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(table); }}
           className="absolute right-2 top-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-red-500/10 hover:text-red-400 transition-all z-10"
@@ -786,6 +1107,20 @@ function TableCard({
         >
           <Trash2 size={13} />
         </button>
+      )}
+
+      {/* Merge badge (top-right corner) */}
+      {(isMergedSecondary || isMergedPrimary) && (
+        <div className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-ra-accent/15 border border-ra-accent/30 px-1.5 py-0.5">
+          {isMergedPrimary
+            ? <Crown size={9} className="text-ra-accent" />
+            : <Link2 size={9} className="text-ra-accent" />}
+          <span className="text-[9px] font-medium text-ra-accent">
+            {isMergedPrimary
+              ? table.mergedTables.map((m) => `T${m.number}`).join("+")
+              : `→T${table.mergedInto?.number}`}
+          </span>
+        </div>
       )}
 
       <div className="p-5">
@@ -800,43 +1135,62 @@ function TableCard({
               <span className="text-xs">{table.seats} seats</span>
             </div>
           </div>
-          <TableStatusBadge
-            status={table.status as "empty" | "occupied" | "ordering" | "billing"}
-          />
-        </div>
-
-        {/* Waiter */}
-        <div className="flex items-center gap-2 mb-3">
-          {table.waiter ? (
-            <>
-              <span className="text-base leading-none">{table.waiter.avatar}</span>
-              <span className="text-xs text-ra-muted truncate">{table.waiter.name}</span>
-            </>
+          {isMergedSecondary ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-ra-accent/10 border border-ra-accent/30 px-2 py-0.5 text-[10px] font-medium text-ra-accent">
+              <Link2 size={9} /> Merged
+            </span>
           ) : (
-            <span className="text-xs text-ra-muted/50 italic">No waiter assigned</span>
+            <TableStatusBadge
+              status={table.status as "empty" | "occupied" | "ordering" | "billing"}
+            />
           )}
         </div>
 
-        {/* Order summary */}
-        {latestOrder ? (
-          <div className="rounded-lg bg-ra-bg border border-ra-border/60 px-3 py-2">
-            <div className="flex items-center justify-between mb-0.5">
-              <OrderStatusBadge
-                status={latestOrder.status as "received" | "preparing" | "ready" | "served"}
-                className="text-[10px]"
-              />
-              <span className="text-xs font-medium text-ra-text">
-                ${latestOrder.total.toFixed(2)}
-              </span>
-            </div>
-            {itemSummary && (
-              <p className="text-[11px] text-ra-muted truncate mt-1">{itemSummary}</p>
-            )}
+        {/* Secondary merged: just show redirect info */}
+        {isMergedSecondary ? (
+          <div className="rounded-lg bg-ra-accent/5 border border-ra-accent/20 px-3 py-2 mb-3">
+            <p className="text-[11px] text-ra-muted">
+              Scans redirect to <span className="text-ra-accent font-medium">Table {table.mergedInto?.number}</span>&apos;s session
+            </p>
           </div>
         ) : (
-          <div className="rounded-lg bg-ra-bg/40 border border-dashed border-ra-border/40 px-3 py-2">
-            <p className="text-[11px] text-ra-muted/40 text-center">No active order</p>
-          </div>
+          <>
+            {/* Waiter */}
+            <div className="flex items-center gap-2 mb-3">
+              {table.waiter ? (
+                <>
+                  <span className="text-base leading-none">{table.waiter.avatar}</span>
+                  <span className="text-xs text-ra-muted truncate">{table.waiter.name}</span>
+                </>
+              ) : (
+                <span className="text-xs text-ra-muted/50 italic">No waiter assigned</span>
+              )}
+            </div>
+
+            {/* Order summary */}
+            {latestOrder ? (
+              <div className="rounded-lg bg-ra-bg border border-ra-border/60 px-3 py-2">
+                <div className="flex items-center justify-between mb-0.5">
+                  <OrderStatusBadge
+                    status={latestOrder.status as "received" | "preparing" | "ready" | "served"}
+                    className="text-[10px]"
+                  />
+                  <span className="text-xs font-medium text-ra-text">
+                    ${latestOrder.total.toFixed(2)}
+                  </span>
+                </div>
+                {itemSummary && (
+                  <p className="text-[11px] text-ra-muted truncate mt-1">{itemSummary}</p>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-lg bg-ra-bg/40 border border-dashed border-ra-border/40 px-3 py-2">
+                <p className="text-[11px] text-ra-muted/40 text-center">
+                  {isMergedPrimary ? `Group session (T${table.mergedTables.map((m) => m.number).join("+")})` : "No active order"}
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Footer: QR + Chat buttons */}
@@ -848,12 +1202,14 @@ function TableCard({
           >
             <QrCode size={11} /> QR
           </Link>
-          <button
-            onClick={(e) => { e.stopPropagation(); onSelect(table); }}
-            className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-colors"
-          >
-            <MessageSquare size={11} /> Chat log
-          </button>
+          {!isMergedSecondary && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onSelect(table); }}
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-colors"
+            >
+              <MessageSquare size={11} /> Chat log
+            </button>
+          )}
           <span className="ml-auto text-xs text-ra-muted/40">
             <Clock size={10} className="inline mr-0.5" />
             {formatTimeAgo(new Date(table.updatedAt))}
@@ -878,7 +1234,9 @@ export function TablesPageClient({ tables: initialTables, waiters, restaurantSlu
   const [detailLoading, setDetailLoading] = useState(false);
   const [deleteTarget,  setDeleteTarget]  = useState<Table | null>(null);
   const [resetTarget,   setResetTarget]   = useState<Table | null>(null);
+  const [unmergeTarget, setUnmergeTarget] = useState<Table | null>(null);
   const [showAddModal,  setShowAddModal]  = useState(false);
+  const [showMergeModal, setShowMergeModal] = useState(false);
   const [refreshing,    setRefreshing]    = useState(false);
 
   // ── Auto-polling every 10s ──────────────────────────────────────────────
@@ -955,6 +1313,14 @@ export function TablesPageClient({ tables: initialTables, waiters, restaurantSlu
     }
   }, [selectedTable]);
 
+  const handleUnmergeFromSlideOver = useCallback(() => {
+    if (selectedTable) {
+      const t = selectedTable;
+      setSelectedTable(null);
+      setTimeout(() => setUnmergeTarget(t), 150);
+    }
+  }, [selectedTable]);
+
   const FILTERS: { key: TableStatus; label: string }[] = [
     { key: "all",      label: "All" },
     { key: "occupied", label: "Occupied" },
@@ -963,8 +1329,6 @@ export function TablesPageClient({ tables: initialTables, waiters, restaurantSlu
     { key: "empty",    label: "Empty" },
   ];
 
-  // Suppress unused variable warning
-  void handleDeleteFromSlideOver;
   void restaurantSlug;
 
   return (
@@ -988,6 +1352,14 @@ export function TablesPageClient({ tables: initialTables, waiters, restaurantSlu
           >
             <RefreshCw size={16} />
           </button>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Link2 size={14} />}
+            onClick={() => setShowMergeModal(true)}
+          >
+            Merge Tables
+          </Button>
           <Button
             variant="amber"
             size="sm"
@@ -1078,6 +1450,7 @@ export function TablesPageClient({ tables: initialTables, waiters, restaurantSlu
           detailLoading={detailLoading}
           onClose={() => { setSelectedTable(null); setDetail(null); }}
           onReset={handleResetFromSlideOver}
+          onUnmerge={handleUnmergeFromSlideOver}
         />
       )}
 
@@ -1086,6 +1459,22 @@ export function TablesPageClient({ tables: initialTables, waiters, restaurantSlu
         <AddTableModal
           waiters={waiters}
           onClose={() => setShowAddModal(false)}
+        />
+      )}
+
+      {/* Merge modal */}
+      {showMergeModal && (
+        <MergeTablesModal
+          tables={tables}
+          onClose={() => setShowMergeModal(false)}
+        />
+      )}
+
+      {/* Unmerge modal */}
+      {unmergeTarget && (
+        <UnmergeModal
+          primaryTable={unmergeTarget}
+          onClose={() => setUnmergeTarget(null)}
         />
       )}
 

@@ -23,7 +23,9 @@ export default async function TablesPage() {
       where:   { restaurantId },
       orderBy: { number: "asc" },
       include: {
-        waiter: { select: { id: true, name: true, avatar: true } },
+        waiter:       { select: { id: true, name: true, avatar: true } },
+        mergedInto:   { select: { id: true, number: true } },
+        mergedTables: { select: { id: true, number: true }, orderBy: { number: "asc" } },
         orders: {
           where:   { status: { in: ["received", "preparing", "ready"] } },
           orderBy: { createdAt: "desc" },

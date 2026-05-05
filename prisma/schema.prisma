@@ -132,6 +132,9 @@ model Table {
   qrCode       String?
   waiterId     String?
   waiter       AIWaiter?      @relation(fields: [waiterId], references: [id])
+  mergedIntoId String?
+  mergedInto   Table?         @relation("MergedTables", fields: [mergedIntoId], references: [id])
+  mergedTables Table[]        @relation("MergedTables")
   orders       Order[]
   sessions     TableSession[]
   createdAt    DateTime       @default(now())

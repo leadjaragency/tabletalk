@@ -50,7 +50,8 @@ export async function POST(req: Request) {
         },
       },
       select: {
-        id:     true,
+        id:           true,
+        mergedIntoId: true,
         waiter: {
           select: {
             id:       true,
@@ -69,33 +70,55 @@ export async function POST(req: Request) {
       );
     }
 
-    // ── Guard: block if table already has an active session ─────────────
+    // ── If merged, resolve to primary table for the session ──────────────
+    let effectiveTableId = table.id;
+    let effectiveWaiter  = table.waiter;
+
+    if (table.mergedIntoId) {
+      const primary = await prisma.table.findUnique({
+        where:  { id: table.mergedIntoId },
+        select: {
+          id:     true,
+          waiter: { select: { id: true, name: true, avatar: true, greeting: true } },
+        },
+      });
+      if (primary) {
+        effectiveTableId = primary.id;
+        effectiveWaiter  = primary.waiter ?? effectiveWaiter;
+      }
+    }
+
+    // ── Guard: if primary already has an active session, join it ─────────
     const existing = await prisma.tableSession.findFirst({
-      where: { tableId: table.id, endedAt: null },
+      where:  { tableId: effectiveTableId, endedAt: null },
       select: { id: true },
     });
     if (existing) {
-      return NextResponse.json({ error: "table_occupied" }, { status: 409 });
+      // For merged tables: multiple people scanning join the same session
+      return NextResponse.json({
+        sessionId: existing.id,
+        waiter:    effectiveWaiter ?? null,
+      });
     }
 
-    // ── Create session + mark table occupied (transaction) ───────────────
+    // ── Create session + mark primary table occupied (transaction) ────────
     const [session] = await prisma.$transaction([
       prisma.tableSession.create({
         data: {
           restaurantId: restaurant.id,
-          tableId:      table.id,
+          tableId:      effectiveTableId,
         },
         select: { id: true },
       }),
       prisma.table.update({
-        where: { id: table.id },
+        where: { id: effectiveTableId },
         data:  { status: "occupied" },
       }),
     ]);
 
     return NextResponse.json({
       sessionId: session.id,
-      waiter:    table.waiter ?? null,
+      waiter:    effectiveWaiter ?? null,
     });
   } catch (error) {
     console.error("[POST /api/sessions]", error);

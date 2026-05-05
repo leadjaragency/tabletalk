@@ -29,10 +29,11 @@ export interface CustomerRestaurant {
 }
 
 export interface CustomerTable {
-  id: string;
-  number: number;
-  seats: number;
-  status: string;
+  id:                   string;
+  number:               number;
+  seats:                number;
+  status:               string;
+  mergedIntoPrimaryNum: number | null;
 }
 
 export interface CustomerWaiter {

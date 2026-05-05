@@ -67,10 +67,11 @@ export async function GET(req: Request) {
         },
       },
       select: {
-        id:       true,
-        number:   true,
-        seats:    true,
-        status:   true,
+        id:           true,
+        number:       true,
+        seats:        true,
+        status:       true,
+        mergedIntoId: true,
         waiter: {
           select: {
             id:          true,
@@ -92,10 +93,38 @@ export async function GET(req: Request) {
       );
     }
 
-    // ── Session lock check ───────────────────────────────────────────────
+    // ── If this table is merged into another, resolve to the primary ─────
+    let effectiveTable = table;
+    if (table.mergedIntoId) {
+      const primary = await prisma.table.findUnique({
+        where:  { id: table.mergedIntoId },
+        select: {
+          id:     true,
+          number: true,
+          seats:  true,
+          status: true,
+          waiter: {
+            select: {
+              id:          true,
+              name:        true,
+              avatar:      true,
+              personality: true,
+              tone:        true,
+              languages:   true,
+              greeting:    true,
+            },
+          },
+        },
+      });
+      if (primary) {
+        effectiveTable = { ...primary, mergedIntoId: table.mergedIntoId };
+      }
+    }
+
+    // ── Session lock check (against effective / primary table) ───────────
     const sessionId = searchParams.get("sessionId")?.trim() ?? null;
     const activeSession = await prisma.tableSession.findFirst({
-      where: { tableId: table.id, endedAt: null },
+      where: { tableId: effectiveTable.id, endedAt: null },
       select: { id: true },
     });
     if (activeSession && sessionId !== activeSession.id) {
@@ -107,13 +136,16 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       restaurant: restaurantPublic,
+      // Return effective (primary) table ID for all operations,
+      // but keep the original table number so the customer sees their physical table.
       table: {
-        id:     table.id,
-        number: table.number,
-        seats:  table.seats,
-        status: table.status,
+        id:                    effectiveTable.id,
+        number:                table.number,         // original scanned table number
+        seats:                 effectiveTable.seats,
+        status:                effectiveTable.status,
+        mergedIntoPrimaryNum:  table.mergedIntoId ? effectiveTable.number : null,
       },
-      waiter: table.waiter ?? null,
+      waiter: effectiveTable.waiter ?? null,
     });
   } catch (error) {
     console.error("[GET /api/customer/info]", error);

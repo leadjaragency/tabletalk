@@ -26,7 +26,9 @@ export async function GET(_req: Request, { params }: Ctx) {
     const table = await prisma.table.findUnique({
       where: { id },
       include: {
-        waiter: { select: { id: true, name: true, avatar: true, personality: true } },
+        waiter:       { select: { id: true, name: true, avatar: true, personality: true } },
+        mergedInto:   { select: { id: true, number: true } },
+        mergedTables: { select: { id: true, number: true }, orderBy: { number: "asc" } },
         // Active session with ALL orders for this session
         sessions: {
           where:   { endedAt: null },
@@ -157,7 +159,8 @@ export async function DELETE(_req: Request, { params }: Ctx) {
       select: {
         restaurantId: true,
         status:       true,
-        _count:       { select: { orders: true, sessions: true } },
+        mergedIntoId: true,
+        _count:       { select: { orders: true, sessions: true, mergedTables: true } },
       },
     });
 
@@ -173,7 +176,14 @@ export async function DELETE(_req: Request, { params }: Ctx) {
       );
     }
 
-    // If no history, hard-delete; otherwise keep for audit (won't reach here if occupied check passes, but future-safe)
+    // Prevent deletion of a primary table that still has merged secondaries
+    if (existing._count.mergedTables > 0) {
+      return NextResponse.json(
+        { error: "This table has merged tables linked to it. Unmerge them first." },
+        { status: 409 }
+      );
+    }
+
     await prisma.table.delete({ where: { id } });
     return NextResponse.json({ deleted: true });
   } catch (error) {

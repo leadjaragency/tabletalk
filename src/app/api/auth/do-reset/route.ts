@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { supabaseAdmin } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { sendPasswordChangedEmail } from "@/lib/email";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Use Admin API — bypasses session scope issues, always works
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+    const { error: updateError } = await getSupabaseAdmin().auth.admin.updateUserById(
       user.id,
       { password }
     );

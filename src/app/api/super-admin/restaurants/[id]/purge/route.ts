@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { supabaseAdmin } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -65,7 +65,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     // Delete Supabase auth accounts so owners can never log in again
     await Promise.all(
       supabaseUserIds.map((uid) =>
-        supabaseAdmin.auth.admin.deleteUser(uid).catch(() => {
+        getSupabaseAdmin().auth.admin.deleteUser(uid).catch(() => {
           // Log but don't fail — DB is already cleaned up
           console.warn(`[purge] Failed to delete Supabase user ${uid}`);
         })

@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { supabaseAdmin } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { sendWelcomeEmail } from "@/lib/email";
 import { generateSlug } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     }
 
     // Create Supabase Auth user (admin API — bypasses Supabase confirmation email)
-    const { data: sbData, error: sbError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: sbData, error: sbError } = await getSupabaseAdmin().auth.admin.createUser({
       email: normalizedEmail,
       password,
       email_confirm: true, // mark email as confirmed — we send our own email via Resend
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
     });
 
     // Back-fill restaurantId into Supabase user metadata
-    await supabaseAdmin.auth.admin.updateUserById(supabaseUserId, {
+    await getSupabaseAdmin().auth.admin.updateUserById(supabaseUserId, {
       user_metadata: {
         role:         "restaurant_owner",
         isActive:     false,
@@ -135,7 +135,7 @@ export async function POST(req: Request) {
   } catch (error) {
     // Clean up the orphaned Supabase user if the Prisma transaction failed
     if (supabaseUserId) {
-      await supabaseAdmin.auth.admin.deleteUser(supabaseUserId).catch(() => {});
+      await getSupabaseAdmin().auth.admin.deleteUser(supabaseUserId).catch(() => {});
     }
     console.error("[signup]", error);
     return NextResponse.json(

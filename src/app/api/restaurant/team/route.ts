@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     }
 
     // Create Supabase Auth user for the manager
-    const { data: sbData, error: sbError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: sbData, error: sbError } = await getSupabaseAdmin().auth.admin.createUser({
       email:         normalizedEmail,
       password:      parsed.data.password,
       email_confirm: true,
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       });
     } catch (prismaErr) {
       // Clean up the Supabase user if Prisma fails
-      await supabaseAdmin.auth.admin.deleteUser(sbData.user.id).catch(() => {});
+      await getSupabaseAdmin().auth.admin.deleteUser(sbData.user.id).catch(() => {});
       throw prismaErr;
     }
 

@@ -32,12 +32,19 @@ export async function createServerSupabaseClient() {
 
 // ---------------------------------------------------------------------------
 // Admin client — service role, bypasses RLS.
+// Lazy singleton so it is never instantiated at module-load / build time.
 // Use only in API routes / server actions that manage Supabase auth users.
 // NEVER expose this to the browser.
 // ---------------------------------------------------------------------------
-export const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession:   false,
-  },
-});
+let _adminClient: ReturnType<typeof createClient> | null = null;
+
+export function getSupabaseAdmin() {
+  if (!_adminClient) {
+    _adminClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+  }
+  return _adminClient;
+}

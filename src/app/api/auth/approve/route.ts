@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { supabaseAdmin } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { getRequiredSession, requireRole } from "@/lib/auth";
 import { sendApprovalEmail } from "@/lib/email";
 
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
       // Update Supabase user metadata for each owner (enables middleware trial check)
       for (const owner of restaurant.users) {
         if (owner.supabaseUserId) {
-          await supabaseAdmin.auth.admin.updateUserById(owner.supabaseUserId, {
+          await getSupabaseAdmin().auth.admin.updateUserById(owner.supabaseUserId, {
             user_metadata: {
               role:          "restaurant_owner",
               isActive:      true,
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
 
     for (const owner of restaurant.users) {
       if (owner.supabaseUserId) {
-        await supabaseAdmin.auth.admin.updateUserById(owner.supabaseUserId, {
+        await getSupabaseAdmin().auth.admin.updateUserById(owner.supabaseUserId, {
           user_metadata: { isActive: false },
         });
       }

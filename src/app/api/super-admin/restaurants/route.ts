@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { getRequiredSession } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { supabaseAdmin } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { prisma } from "@/lib/db";
 import { generateSlug } from "@/lib/utils";
 
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
     }
 
     // Create Supabase Auth user first
-    const { data: sbData, error: sbError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: sbData, error: sbError } = await getSupabaseAdmin().auth.admin.createUser({
       email:         ownerEmail,
       password:      ownerPassword,
       email_confirm: true,
@@ -155,12 +155,12 @@ export async function POST(req: Request) {
       });
       restaurant = result.restaurant;
     } catch (txErr) {
-      await supabaseAdmin.auth.admin.deleteUser(sbData.user.id).catch(() => {});
+      await getSupabaseAdmin().auth.admin.deleteUser(sbData.user.id).catch(() => {});
       throw txErr;
     }
 
     // Update Supabase metadata with restaurantId
-    await supabaseAdmin.auth.admin.updateUserById(sbData.user.id, {
+    await getSupabaseAdmin().auth.admin.updateUserById(sbData.user.id, {
       user_metadata: {
         role: "restaurant_owner", isActive: true,
         restaurantId: restaurant.id, restaurantSlug: restaurant.slug,

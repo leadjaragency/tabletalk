@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { TopLoadingBar } from "@/components/ui/TopLoadingBar";
 import {
   LayoutDashboard,
   Building2,
@@ -75,11 +76,13 @@ interface SuperAdminSidebarProps {
 
 export function SuperAdminSidebar({ pendingCount, adminName }: SuperAdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const close = () => setMobileOpen(false);
 
   async function handleSignOut() {
+    setSigningOut(true);
     const supabase = createBrowserClient();
     await supabase.auth.signOut();
     router.push("/auth/login");
@@ -220,6 +223,7 @@ export function SuperAdminSidebar({ pendingCount, adminName }: SuperAdminSidebar
 
   return (
     <>
+      <TopLoadingBar visible={signingOut} />
       {/* Mobile hamburger */}
       <button
         className="lg:hidden fixed top-[15px] left-4 z-50 flex h-8 w-8 items-center justify-center rounded-lg transition-colors"

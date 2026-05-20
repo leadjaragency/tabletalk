@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TopLoadingBar } from "@/components/ui/TopLoadingBar";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase";
@@ -395,9 +396,11 @@ export function AdminSidebar({
   userEmail,
 }: AdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const router = useRouter();
 
   async function handleSignOut() {
+    setSigningOut(true);
     const supabase = createBrowserClient();
     await supabase.auth.signOut();
     router.push("/auth/login");
@@ -406,6 +409,7 @@ export function AdminSidebar({
 
   return (
     <>
+      <TopLoadingBar visible={signingOut} />
       {/* ── Mobile hamburger trigger ───────────────────────────────────── */}
       <button
         onClick={() => setMobileOpen(true)}

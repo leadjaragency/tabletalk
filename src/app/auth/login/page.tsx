@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Utensils, QrCode, TrendingUp, Star } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
+import { TopLoadingBar } from "@/components/ui/TopLoadingBar";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -73,6 +74,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex" style={{ fontFamily: "var(--font-montserrat, sans-serif)" }}>
+      <TopLoadingBar visible={isSubmitting} />
       <style>{`
         .smt-input:focus { border-color: #C6A34E !important; box-shadow: 0 0 0 3px rgba(198,163,78,0.15); }
       `}</style>

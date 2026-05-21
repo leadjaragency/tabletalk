@@ -5,6 +5,7 @@ import {
 } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Send, ShoppingBag } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCustomer } from "@/lib/CustomerContext";
 import { useCartStore, selectItemCount } from "@/lib/store";
 import { ChatBubble, type BubbleMessage } from "@/components/customer/ChatBubble";
@@ -84,6 +85,7 @@ async function consumeSSE(stream: ReadableStream<Uint8Array>, handlers: SSEHandl
 // ---------------------------------------------------------------------------
 
 export default function ChatPage() {
+  const t              = useTranslations("customer.chat");
   const params         = useParams<{ tableId: string }>();
   const searchParams   = useSearchParams();
   const router         = useRouter();
@@ -393,7 +395,7 @@ export default function ChatPage() {
           <p className="text-sm font-semibold text-cu-text leading-tight">{waiterName}</p>
           <p className="text-xs text-cu-text/50 leading-tight">
             {isSending ? (
-              <span className="text-cu-accent">Typing…</span>
+              <span className="text-cu-accent">{t("typing")}</span>
             ) : (
               "AI Waiter · Online"
             )}
@@ -423,7 +425,7 @@ export default function ChatPage() {
         {/* Date divider */}
         <div className="mb-4 flex items-center gap-3 px-6">
           <div className="h-px flex-1 bg-cu-border" />
-          <p className="text-[11px] font-medium text-cu-text/40">Today</p>
+          <p className="text-[11px] font-medium text-cu-text/40">{t("today")}</p>
           <div className="h-px flex-1 bg-cu-border" />
         </div>
 
@@ -483,7 +485,7 @@ export default function ChatPage() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message your waiter…"
+            placeholder={t("placeholder")}
             disabled={isSending}
             className="flex-1 rounded-full border border-cu-border bg-cu-bg px-4 py-2.5 text-sm text-cu-text placeholder:text-cu-text/40 focus:border-cu-accent/50 focus:outline-none focus:ring-2 focus:ring-cu-accent/20 disabled:opacity-50"
           />

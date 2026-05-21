@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getRequiredSession, getRestaurantIdFromSession, getPrismaForSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,18 +10,19 @@ export async function GET() {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
     const [syncedToday, unsyncedCount, recentOrders] = await Promise.all([
-      prisma.order.count({
+      db.order.count({
         where: { restaurantId, posSynced: true, createdAt: { gte: todayStart } },
       }),
-      prisma.order.count({
+      db.order.count({
         where: { restaurantId, posSynced: false },
       }),
-      prisma.order.findMany({
+      db.order.findMany({
         where:   { restaurantId },
         orderBy: { createdAt: "desc" },
         take:    5,
@@ -58,8 +58,9 @@ export async function POST() {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
-    const result = await prisma.order.updateMany({
+    const result = await db.order.updateMany({
       where: { restaurantId, posSynced: false },
       data:  { posSynced: true, posOrderId: `POS-${Date.now()}` },
     });

@@ -4,26 +4,14 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { UtensilsCrossed, MessageCircle, Gamepad2, ClipboardList, MoreHorizontal } from "lucide-react";
 import { useCartStore, selectItemCount } from "@/lib/store";
-
-// ---------------------------------------------------------------------------
-// Nav item definition
-// ---------------------------------------------------------------------------
+import { useTranslations } from "next-intl";
 
 interface NavItem {
-  label:    string;
-  segment:  string; // path segment after /table/[id]/
+  key:      "menu" | "chat" | "games" | "bill" | "about";
+  segment:  string;
   icon:     React.ElementType;
-  emoji:    string;
   cartBadge?: boolean;
 }
-
-const NAV_ITEMS: NavItem[] = [
-  { label: "Menu",  segment: "menu",  icon: UtensilsCrossed, emoji: "📋", cartBadge: true },
-  { label: "Chat",  segment: "chat",  icon: MessageCircle,   emoji: "💬" },
-  { label: "Games", segment: "games", icon: Gamepad2,        emoji: "🎰" },
-  { label: "Order", segment: "bill",  icon: ClipboardList,   emoji: "📋" },
-  { label: "More",  segment: "about", icon: MoreHorizontal,  emoji: "☰" },
-];
 
 // ---------------------------------------------------------------------------
 // Component
@@ -34,9 +22,18 @@ interface BottomNavProps {
   restaurantSlug: string;
 }
 
+const NAV_ITEMS: NavItem[] = [
+  { key: "menu",  segment: "menu",  icon: UtensilsCrossed, cartBadge: true },
+  { key: "chat",  segment: "chat",  icon: MessageCircle },
+  { key: "games", segment: "games", icon: Gamepad2 },
+  { key: "bill",  segment: "bill",  icon: ClipboardList },
+  { key: "about", segment: "about", icon: MoreHorizontal },
+];
+
 export function BottomNav({ tableId, restaurantSlug }: BottomNavProps) {
   const pathname  = usePathname();
   const cartCount = useCartStore(selectItemCount);
+  const t         = useTranslations("customer.nav");
 
   function buildHref(segment: string) {
     return `/table/${tableId}/${segment}?restaurant=${encodeURIComponent(restaurantSlug)}`;
@@ -75,7 +72,7 @@ export function BottomNav({ tableId, restaurantSlug }: BottomNavProps) {
                   </span>
                 )}
               </div>
-              <span>{item.label}</span>
+              <span>{t(item.key)}</span>
 
               {/* Active indicator dot */}
               {active && (

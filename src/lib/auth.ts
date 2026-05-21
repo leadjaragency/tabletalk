@@ -1,10 +1,10 @@
-import { prisma } from "@/lib/db";
+import { prisma, prismaDE, getPrismaClient } from "@/lib/db";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import type { AppSession, UserRole } from "@/types";
+import type { AppSession, Country, UserRole } from "@/types";
 
 // ---------------------------------------------------------------------------
 // getRequiredSession — reads the Supabase session from cookies, then fetches
-// the matching Prisma User row for app-level fields (name, restaurantId, etc.)
+// the matching Prisma User row. Checks public schema (CA) first, then de (DE).
 // Throws AuthError(401) if not authenticated.
 // ---------------------------------------------------------------------------
 export async function getRequiredSession(): Promise<AppSession> {
@@ -15,13 +15,45 @@ export async function getRequiredSession(): Promise<AppSession> {
 
   if (!user) throw new AuthError("Unauthorized", 401);
 
-  // Look up the Prisma user by the Supabase user ID
-  const dbUser = await prisma.user.findUnique({
+  // Try Canada (public) schema first, then Germany (de) schema
+  let dbUser = await prisma.user.findUnique({
     where: { supabaseUserId: user.id },
     include: {
-      restaurant: { select: { id: true, slug: true, status: true, trialEndsAt: true } },
+      restaurant: {
+        select: {
+          id: true,
+          slug: true,
+          status: true,
+          trialEndsAt: true,
+          country: true,
+        },
+      },
     },
   });
+
+  let country: Country = "CA";
+
+  if (!dbUser) {
+    // Not found in public — check German schema
+    dbUser = await prismaDE.user.findUnique({
+      where: { supabaseUserId: user.id },
+      include: {
+        restaurant: {
+          select: {
+            id: true,
+            slug: true,
+            status: true,
+            trialEndsAt: true,
+            country: true,
+          },
+        },
+      },
+    });
+    if (dbUser) country = "DE";
+  } else {
+    // Found in public — derive country from their restaurant record
+    country = (dbUser.restaurant?.country as Country) ?? "CA";
+  }
 
   if (!dbUser || !dbUser.isActive) throw new AuthError("Unauthorized", 401);
 
@@ -41,6 +73,7 @@ export async function getRequiredSession(): Promise<AppSession> {
       role:           dbUser.role as UserRole,
       restaurantId:   dbUser.restaurantId ?? null,
       restaurantSlug: dbUser.restaurant?.slug ?? null,
+      country,
     },
   };
 }
@@ -64,28 +97,43 @@ export function getRestaurantIdFromSession(session: AppSession): string {
 }
 
 // ---------------------------------------------------------------------------
-// getRestaurantFromSlug — customer-facing APIs resolve restaurant from URL param
+// getRestaurantFromSlug — customer-facing APIs resolve restaurant from URL
+// param. Checks public schema first, then de schema, so QR codes work for
+// both Canadian and German restaurants.
 // ---------------------------------------------------------------------------
 export async function getRestaurantFromSlug(slug: string) {
-  const restaurant = await prisma.restaurant.findUnique({
+  const fields = {
+    id:       true,
+    name:     true,
+    slug:     true,
+    cuisine:  true,
+    tagline:  true,
+    logoUrl:  true,
+    phone:    true,
+    email:    true,
+    address:  true,
+    hours:    true,
+    taxRate:  true,
+    currency: true,
+    country:  true,
+    status:   true,
+    branding: true,
+    tier:     { select: { features: true } },
+  } as const;
+
+  // Try Canadian restaurants first
+  let restaurant = await prisma.restaurant.findUnique({
     where: { slug },
-    select: {
-      id:       true,
-      name:     true,
-      slug:     true,
-      cuisine:  true,
-      tagline:  true,
-      logoUrl:  true,
-      phone:    true,
-      email:    true,
-      address:  true,
-      hours:    true,
-      taxRate:  true,
-      currency: true,
-      status:   true,
-      tier:     { select: { features: true } },
-    },
+    select: fields,
   });
+
+  // Fall back to German schema if not found in public
+  if (!restaurant) {
+    restaurant = await prismaDE.restaurant.findUnique({
+      where: { slug },
+      select: fields,
+    });
+  }
 
   if (!restaurant) throw new AuthError("Restaurant not found", 404);
   if (restaurant.status !== "active") throw new AuthError("Restaurant is not active", 403);
@@ -102,6 +150,14 @@ export function getDashboardPath(role: UserRole): string {
     case "restaurant_owner":
     case "restaurant_manager": return "/admin";
   }
+}
+
+// ---------------------------------------------------------------------------
+// getPrismaForSession — convenience: returns the right Prisma client for the
+// authenticated user's country. Use this in all restaurant-scoped API routes.
+// ---------------------------------------------------------------------------
+export function getPrismaForSession(session: AppSession) {
+  return getPrismaClient(session.user.country);
 }
 
 // ---------------------------------------------------------------------------

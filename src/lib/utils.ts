@@ -6,9 +6,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format a number as currency, defaults to USD */
-export function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
+/** Format a number as currency. Locale is inferred from currency code. */
+export function formatCurrency(amount: number, currency = "CAD"): string {
+  // Use the canonical locale for each currency so number formatting is correct
+  const locale = currency === "EUR" ? "de-DE" : "en-CA";
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 2,

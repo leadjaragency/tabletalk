@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getRequiredSession, getRestaurantIdFromSession, getPrismaForSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +10,9 @@ export async function GET() {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
-    const restaurant = await prisma.restaurant.findUnique({
+    const restaurant = await db.restaurant.findUnique({
       where:  { id: restaurantId },
       select: {
         id: true, name: true, slug: true, cuisine: true, tagline: true,
@@ -45,12 +45,13 @@ export async function PUT(req: Request) {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
     const body   = await req.json().catch(() => ({}));
     const parsed = UpdateSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
 
-    const updated = await prisma.restaurant.update({
+    const updated = await db.restaurant.update({
       where: { id: restaurantId },
       data:  parsed.data,
     });

@@ -1,7 +1,5 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
-import { prisma } from "@/lib/db";
 
 
 export const dynamic = "force-dynamic";
@@ -21,8 +19,9 @@ export async function POST(_req: Request, { params }: Ctx) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
-    const table = await prisma.table.findUnique({
+    const table = await db.table.findUnique({
       where:  { id },
       select: { restaurantId: true, status: true },
     });
@@ -36,13 +35,13 @@ export async function POST(_req: Request, { params }: Ctx) {
     }
 
     // Close any open sessions for this table (endedAt is null = still open)
-    await prisma.tableSession.updateMany({
+    await db.tableSession.updateMany({
       where: { tableId: id, endedAt: null },
       data:  { endedAt: new Date() },
     });
 
     // Reset table status
-    const updated = await prisma.table.update({
+    const updated = await db.table.update({
       where:   { id },
       data:    { status: "empty" },
       include: { waiter: { select: { id: true, name: true, avatar: true } } },

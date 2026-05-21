@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient } from "@/lib/db";
+import type { Country } from "@/types";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/app/api/restaurant/game-settings/route";
 
 export const dynamic = "force-dynamic";
@@ -22,13 +24,14 @@ export async function POST(req: Request) {
     const { sessionId, restaurantSlug, score, total } = parsed.data;
 
     // Resolve restaurant + game settings
-    const restaurant = await prisma.restaurant.findFirst({
-      where:  { slug: restaurantSlug, status: "active" },
-      select: { id: true, branding: true },
-    });
-    if (!restaurant) {
+    let restaurant: Awaited<ReturnType<typeof getRestaurantFromSlug>>;
+    try {
+      restaurant = await getRestaurantFromSlug(restaurantSlug);
+    } catch {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
     }
+
+    const db = getPrismaClient(restaurant.country as Country);
 
     // Read configured scramble discount
     const branding      = (restaurant.branding ?? {}) as Record<string, unknown>;
@@ -36,7 +39,7 @@ export async function POST(req: Request) {
     const winPct        = gameSettings.scrambleWin / 100;
 
     // Load session — must have at least one order
-    const session = await prisma.tableSession.findUnique({
+    const session = await db.tableSession.findUnique({
       where:  { id: sessionId },
       select: { id: true, restaurantId: true, orders: { select: { id: true }, take: 1 } },
     });
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
 
     const won = score >= Math.ceil(total * 0.8); // 80% threshold (4/5)
 
-    await prisma.gameResult.create({
+    await db.gameResult.create({
       data: {
         restaurantId: restaurant.id,
         sessionId,
@@ -62,12 +65,12 @@ export async function POST(req: Request) {
 
     // Apply discount to session if won and better than current
     if (won) {
-      const current = await prisma.tableSession.findUnique({
+      const current = await db.tableSession.findUnique({
         where:  { id: sessionId },
         select: { discount: true },
       });
       if (!current?.discount || winPct > current.discount) {
-        await prisma.tableSession.update({
+        await db.tableSession.update({
           where: { id: sessionId },
           data:  { discount: winPct },
         });

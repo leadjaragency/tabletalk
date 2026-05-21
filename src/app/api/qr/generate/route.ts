@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getRequiredSession, getRestaurantIdFromSession, getPrismaForSession } from "@/lib/auth";
 import { generateTableQR } from "@/lib/qr-generator";
 
 export const runtime = "nodejs";
@@ -15,16 +14,17 @@ export async function POST(req: Request) {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
     const body = await req.json().catch(() => ({}));
     const { tableId } = Schema.parse(body);
 
     const [table, restaurant] = await Promise.all([
-      prisma.table.findFirst({
+      db.table.findFirst({
         where:  { id: tableId, restaurantId },
         select: { id: true, number: true },
       }),
-      prisma.restaurant.findUnique({
+      db.restaurant.findUnique({
         where:  { id: restaurantId },
         select: { slug: true, name: true },
       }),
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const qrCode  = await generateTableQR(baseUrl, table.number, restaurant.slug);
 
-    await prisma.table.update({ where: { id: tableId }, data: { qrCode } });
+    await db.table.update({ where: { id: tableId }, data: { qrCode } });
 
     return NextResponse.json({ qrCode, tableId, tableNumber: table.number });
   } catch (err) {

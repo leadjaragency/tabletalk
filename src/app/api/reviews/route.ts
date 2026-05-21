@@ -1,9 +1,8 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession, getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
-
-import { prisma } from "@/lib/db";
+import type { Country } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +14,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
     const { searchParams } = new URL(req.url);
     const limit = Math.min(Number(searchParams.get("limit") ?? "50"), 200);
 
-    const reviews = await prisma.review.findMany({
+    const reviews = await db.review.findMany({
       where:   { restaurantId },
       orderBy: { createdAt: "desc" },
       take:    limit,
@@ -60,15 +60,16 @@ export async function POST(req: Request) {
     }
     const { sessionId, restaurantSlug, rating, comment } = parsed.data;
 
-    const restaurant = await prisma.restaurant.findUnique({
-      where:  { slug: restaurantSlug, status: "active" },
-      select: { id: true },
-    });
-    if (!restaurant) {
+    let restaurant: Awaited<ReturnType<typeof getRestaurantFromSlug>>;
+    try {
+      restaurant = await getRestaurantFromSlug(restaurantSlug);
+    } catch {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
     }
 
-    const session = await prisma.tableSession.findUnique({
+    const db = getPrismaClient(restaurant.country as Country);
+
+    const session = await db.tableSession.findUnique({
       where:  { id: sessionId },
       select: { id: true, restaurantId: true },
     });
@@ -77,7 +78,7 @@ export async function POST(req: Request) {
     }
 
     // Upsert review (one per session)
-    const review = await prisma.review.upsert({
+    const review = await db.review.upsert({
       where:  { sessionId },
       create: { sessionId, restaurantId: restaurant.id, rating, comment },
       update: { rating, comment },

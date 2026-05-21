@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getRequiredSession, getRestaurantIdFromSession, getPrismaForSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +11,9 @@ export async function GET() {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
-    const promotions = await prisma.promotion.findMany({
+    const promotions = await db.promotion.findMany({
       where:   { restaurantId },
       orderBy: { createdAt: "desc" },
     });
@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
     const body   = await req.json().catch(() => ({}));
     const parsed = CreateSchema.safeParse(body);
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const promo = await prisma.promotion.create({
+    const promo = await db.promotion.create({
       data: {
         ...parsed.data,
         restaurantId,

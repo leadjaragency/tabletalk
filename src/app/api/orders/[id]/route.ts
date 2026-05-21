@@ -1,8 +1,7 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 
 
 export const dynamic = "force-dynamic";
@@ -39,8 +38,9 @@ export async function GET(_req: Request, { params }: Ctx) {
     if (!session?.user.restaurantId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    const db = getPrismaForSession(session);
 
-    const order = await prisma.order.findUnique({
+    const order = await db.order.findUnique({
       where:   { id },
       include: orderInclude,
     });
@@ -76,8 +76,9 @@ export async function PUT(req: Request, { params }: Ctx) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
-    const existing = await prisma.order.findUnique({
+    const existing = await db.order.findUnique({
       where:  { id },
       select: { restaurantId: true, subtotal: true, tax: true },
     });
@@ -100,7 +101,7 @@ export async function PUT(req: Request, { params }: Ctx) {
       dataToUpdate.total = +(existing.subtotal + existing.tax - parsed.data.discount).toFixed(2);
     }
 
-    const order = await prisma.order.update({
+    const order = await db.order.update({
       where:   { id },
       data:    dataToUpdate,
       include: orderInclude,

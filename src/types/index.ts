@@ -11,6 +11,8 @@ export type UserRole =
 // App session — returned by getRequiredSession() in lib/auth.ts
 // Identical shape to the old NextAuth session so all callers are unchanged.
 // ---------------------------------------------------------------------------
+export type Country = "CA" | "DE";
+
 export interface AppSession {
   user: {
     id: string;
@@ -19,6 +21,7 @@ export interface AppSession {
     role: UserRole;
     restaurantId: string | null;
     restaurantSlug: string | null;
+    country: Country;
   };
 }
 

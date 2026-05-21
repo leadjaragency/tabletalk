@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getRequiredSession, getRestaurantIdFromSession, getPrismaForSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +26,9 @@ export async function PUT(
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
-    const target = await prisma.promotion.findFirst({ where: { id, restaurantId } });
+    const target = await db.promotion.findFirst({ where: { id, restaurantId } });
     if (!target) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const body   = await req.json().catch(() => ({}));
@@ -38,7 +38,7 @@ export async function PUT(
     }
 
     const { validFrom, validUntil, ...rest } = parsed.data;
-    const updated = await prisma.promotion.update({
+    const updated = await db.promotion.update({
       where: { id },
       data:  {
         ...rest,
@@ -63,12 +63,13 @@ export async function PATCH(
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
-    const target = await prisma.promotion.findFirst({ where: { id, restaurantId } });
+    const target = await db.promotion.findFirst({ where: { id, restaurantId } });
     if (!target) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const body    = await req.json().catch(() => ({}));
-    const updated = await prisma.promotion.update({
+    const updated = await db.promotion.update({
       where: { id },
       data:  { isActive: body.isActive ?? !target.isActive },
     });
@@ -89,11 +90,12 @@ export async function DELETE(
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
-    const target = await prisma.promotion.findFirst({ where: { id, restaurantId } });
+    const target = await db.promotion.findFirst({ where: { id, restaurantId } });
     if (!target) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    await prisma.promotion.delete({ where: { id } });
+    await db.promotion.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[DELETE /api/promotions/[id]]", err);

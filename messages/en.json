@@ -1,0 +1,613 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "success": "Success",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "status": "Status",
+    "actions": "Actions",
+    "view": "View",
+    "print": "Print",
+    "download": "Download",
+    "refresh": "Refresh",
+    "settings": "Settings",
+    "logout": "Log out",
+    "required": "This field is required",
+    "optional": "Optional",
+    "noResults": "No results found",
+    "today": "Today",
+    "thisMonth": "This month"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your ServeMyTable account",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "submitButton": "Sign In",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "invalidCredentials": "Invalid email or password",
+      "loginError": "Login failed. Please try again."
+    },
+    "signup": {
+      "title": "Create Your Restaurant",
+      "subtitle": "Join ServeMyTable and delight your guests with AI-powered service",
+      "restaurantName": "Restaurant Name",
+      "cuisine": "Cuisine Type",
+      "ownerName": "Your Full Name",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "phoneLabel": "Phone Number",
+      "addressLabel": "Address",
+      "submitButton": "Create Account",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "successTitle": "Application Submitted",
+      "successMessage": "Your restaurant account has been submitted for review. We'll notify you by email once approved."
+    },
+    "pending": {
+      "title": "Account Under Review",
+      "message": "Your restaurant account is currently being reviewed by our team. You'll receive an email once your account is approved.",
+      "contactSupport": "Contact support",
+      "checkStatus": "Check status"
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email and we'll send you a reset link",
+      "emailLabel": "Email address",
+      "submitButton": "Send Reset Link",
+      "backToLogin": "Back to login",
+      "emailSent": "If an account exists with that email, a reset link has been sent."
+    },
+    "resetPassword": {
+      "title": "Set New Password",
+      "newPasswordLabel": "New Password",
+      "confirmPasswordLabel": "Confirm Password",
+      "submitButton": "Update Password",
+      "passwordMismatch": "Passwords do not match",
+      "successMessage": "Password updated successfully"
+    },
+    "trialExpired": {
+      "title": "Trial Period Ended",
+      "message": "Your 14-day free trial has ended. Please upgrade to continue using ServeMyTable.",
+      "upgradeButton": "Upgrade Now",
+      "contactUs": "Contact us"
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "tables": "Tables",
+      "menu": "Menu",
+      "orders": "Orders",
+      "waiters": "AI Waiters",
+      "qrCodes": "QR Codes",
+      "promotions": "Promotions",
+      "analytics": "Analytics",
+      "pos": "POS Integration",
+      "team": "Team",
+      "settings": "Settings"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "activeTables": "Active Tables",
+      "ordersToday": "Orders Today",
+      "revenueToday": "Revenue Today",
+      "avgWaitTime": "Avg Wait Time",
+      "liveOrders": "Live Orders",
+      "waitersStatus": "AI Waiters Status",
+      "noLiveOrders": "No active orders right now",
+      "minutes": "min",
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "tables": {
+      "title": "Floor Plan",
+      "addTable": "Add Table",
+      "filterAll": "All",
+      "filterOccupied": "Occupied",
+      "filterOrdering": "Ordering",
+      "filterBilling": "Billing",
+      "filterEmpty": "Empty",
+      "tableNumber": "Table {number}",
+      "seats": "{count} seats",
+      "waiter": "Waiter",
+      "noWaiter": "No waiter assigned",
+      "status": {
+        "empty": "Empty",
+        "occupied": "Occupied",
+        "ordering": "Ordering",
+        "billing": "Billing"
+      },
+      "addModal": {
+        "title": "Add New Table",
+        "tableNumber": "Table Number",
+        "seats": "Number of Seats",
+        "assignWaiter": "Assign AI Waiter",
+        "noWaiterOption": "No waiter",
+        "submitButton": "Add Table"
+      },
+      "mergeModal": {
+        "title": "Merge Tables",
+        "description": "Select tables to merge into a group",
+        "primaryTable": "Primary Table",
+        "secondaryTables": "Secondary Tables",
+        "submitButton": "Merge Tables",
+        "unmergeButton": "Unmerge",
+        "mergeWarning": "Secondary tables must be empty to merge"
+      }
+    },
+    "menu": {
+      "title": "Menu Manager",
+      "addDish": "Add Dish",
+      "addCategory": "Add Category",
+      "searchPlaceholder": "Search dishes...",
+      "columns": {
+        "dish": "Dish",
+        "category": "Category",
+        "price": "Price",
+        "spice": "Spice",
+        "prepTime": "Prep Time",
+        "available": "Available"
+      },
+      "badges": {
+        "veg": "Veg",
+        "vegan": "Vegan",
+        "glutenFree": "Gluten Free",
+        "chefPick": "Chef's Pick",
+        "popular": "Popular"
+      },
+      "dishModal": {
+        "addTitle": "Add New Dish",
+        "editTitle": "Edit Dish",
+        "name": "Dish Name",
+        "description": "Description",
+        "price": "Price",
+        "category": "Category",
+        "spiceLevel": "Spice Level",
+        "prepTime": "Prep Time (minutes)",
+        "imageEmoji": "Emoji",
+        "allergens": "Allergens",
+        "isVeg": "Vegetarian",
+        "isVegan": "Vegan",
+        "isGlutenFree": "Gluten Free",
+        "isChefPick": "Chef's Pick",
+        "isPopular": "Popular",
+        "isAvailable": "Available",
+        "submitButton": "Save Dish"
+      },
+      "deleteConfirm": "Are you sure you want to delete this dish?"
+    },
+    "orders": {
+      "title": "Live Orders",
+      "status": {
+        "received": "Received",
+        "preparing": "Preparing",
+        "ready": "Ready",
+        "served": "Served"
+      },
+      "table": "Table {number}",
+      "items": "{count} items",
+      "total": "Total",
+      "specialNotes": "Special Notes",
+      "allergenWarning": "Contains allergens",
+      "advanceStatus": "Advance Status",
+      "noOrders": "No orders in this stage",
+      "newOrderAlert": "New order received!"
+    },
+    "waiters": {
+      "title": "AI Waiters",
+      "addWaiter": "Add New AI Waiter",
+      "noWaiters": "No AI waiters configured yet",
+      "tables": "{count} tables",
+      "languages": "Languages",
+      "personality": "Personality",
+      "tone": "Tone",
+      "addModal": {
+        "title": "Add AI Waiter",
+        "editTitle": "Edit AI Waiter",
+        "name": "Waiter Name",
+        "avatar": "Avatar Emoji",
+        "personality": "Personality Description",
+        "tone": "Tone",
+        "toneOptions": {
+          "friendly": "Friendly",
+          "professional": "Professional",
+          "casual": "Casual",
+          "formal": "Formal"
+        },
+        "languages": "Languages",
+        "greeting": "Custom Greeting",
+        "submitButton": "Save Waiter"
+      },
+      "deleteConfirm": "Are you sure you want to delete this waiter?"
+    },
+    "qrCodes": {
+      "title": "QR Codes",
+      "printAll": "Print All",
+      "downloadPdf": "Download PDF",
+      "table": "Table {number}",
+      "regenerate": "Regenerate",
+      "noTables": "No tables found. Add tables first.",
+      "downloadSuccess": "QR codes downloaded successfully"
+    },
+    "promotions": {
+      "title": "Promotions",
+      "addPromotion": "Add Promotion",
+      "noPromotions": "No promotions set up yet",
+      "type": {
+        "percentage": "Percentage Off",
+        "fixed": "Fixed Amount Off",
+        "freeItem": "Free Item"
+      },
+      "valid": "Valid",
+      "expired": "Expired",
+      "expires": "Expires {date}",
+      "minOrder": "Min. order {amount}",
+      "addModal": {
+        "title": "Add Promotion",
+        "editTitle": "Edit Promotion",
+        "promotionTitle": "Title",
+        "description": "Description",
+        "type": "Type",
+        "value": "Value",
+        "validFrom": "Valid From",
+        "validUntil": "Valid Until",
+        "minOrder": "Minimum Order",
+        "freeItem": "Free Item",
+        "isActive": "Active",
+        "submitButton": "Save Promotion"
+      }
+    },
+    "analytics": {
+      "title": "Analytics",
+      "weeklyRevenue": "Weekly Revenue",
+      "satisfaction": "Customer Satisfaction",
+      "gameEngagement": "Game Engagement",
+      "topDishes": "Top Selling Dishes",
+      "recentReviews": "Recent Reviews",
+      "orders": "orders",
+      "rating": "Rating",
+      "noReviews": "No reviews yet",
+      "noOrders": "No order data yet"
+    },
+    "pos": {
+      "title": "POS Integration",
+      "status": "Connection Status",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "syncStats": "Sync Statistics",
+      "orderFlow": "Order Flow",
+      "settings": "POS Settings",
+      "totalSynced": "Total Synced",
+      "lastSync": "Last Sync",
+      "configure": "Configure"
+    },
+    "team": {
+      "title": "Team",
+      "inviteMember": "Invite Member",
+      "noMembers": "No team members yet",
+      "roles": {
+        "restaurant_owner": "Owner",
+        "restaurant_manager": "Manager"
+      },
+      "inviteModal": {
+        "title": "Invite Team Member",
+        "emailLabel": "Email Address",
+        "roleLabel": "Role",
+        "submitButton": "Send Invite"
+      },
+      "removeConfirm": "Remove this team member?",
+      "joinedDate": "Joined {date}"
+    },
+    "settings": {
+      "title": "Restaurant Settings",
+      "profile": "Restaurant Profile",
+      "restaurantName": "Restaurant Name",
+      "cuisine": "Cuisine Type",
+      "tagline": "Tagline",
+      "phone": "Phone",
+      "address": "Address",
+      "hours": "Opening Hours",
+      "openTime": "Opens at",
+      "closeTime": "Closes at",
+      "saveButton": "Save Changes",
+      "dangerZone": "Danger Zone",
+      "resetData": "Reset Demo Data",
+      "resetConfirm": "This will delete all orders and sessions. Are you sure?",
+      "savedSuccess": "Settings saved successfully"
+    }
+  },
+  "superAdmin": {
+    "nav": {
+      "overview": "Overview",
+      "restaurants": "Restaurants",
+      "approvals": "Approvals",
+      "billing": "Billing",
+      "apiUsage": "API Usage",
+      "analytics": "Analytics",
+      "settings": "Settings"
+    },
+    "overview": {
+      "title": "Platform Overview",
+      "activeRestaurants": "Active Restaurants",
+      "ordersToday": "Orders Today",
+      "monthlyRevenue": "Monthly Revenue",
+      "apiCostToday": "API Cost Today",
+      "recentActivity": "Recent Activity",
+      "pendingApprovals": "pending approvals",
+      "noActivity": "No recent activity"
+    },
+    "restaurants": {
+      "title": "All Restaurants",
+      "search": "Search restaurants...",
+      "columns": {
+        "name": "Restaurant",
+        "cuisine": "Cuisine",
+        "status": "Status",
+        "tier": "Tier",
+        "tables": "Tables",
+        "ordersToday": "Today's Orders",
+        "country": "Country"
+      },
+      "statusFilter": {
+        "all": "All",
+        "active": "Active",
+        "pending": "Pending",
+        "suspended": "Suspended"
+      },
+      "actions": {
+        "view": "View",
+        "editTier": "Edit Tier",
+        "suspend": "Suspend",
+        "activate": "Activate",
+        "disable": "Disable"
+      }
+    },
+    "approvals": {
+      "title": "Pending Approvals",
+      "noPending": "No pending approvals",
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectReason": "Reason for rejection",
+      "assignTier": "Assign Tier",
+      "appliedOn": "Applied on {date}",
+      "approveSuccess": "Restaurant approved successfully",
+      "rejectSuccess": "Application rejected"
+    },
+    "billing": {
+      "title": "Billing",
+      "columns": {
+        "restaurant": "Restaurant",
+        "tier": "Tier",
+        "monthlyPrice": "Monthly Price",
+        "apiCost": "API Cost",
+        "total": "Total",
+        "status": "Status"
+      },
+      "editTier": "Change Tier",
+      "noData": "No billing data"
+    },
+    "apiUsage": {
+      "title": "API Usage",
+      "columns": {
+        "restaurant": "Restaurant",
+        "calls": "API Calls",
+        "tokens": "Tokens",
+        "cost": "Cost"
+      },
+      "dailyChart": "Daily Usage",
+      "noData": "No API usage data"
+    },
+    "analytics": {
+      "title": "Platform Analytics",
+      "byCuisine": "Restaurants by Cuisine",
+      "ordersTrend": "Orders Trend",
+      "busiestRestaurants": "Busiest Restaurants",
+      "avgSatisfaction": "Avg. Satisfaction",
+      "totalOrders": "Total Orders",
+      "totalRestaurants": "Total Restaurants"
+    },
+    "settings": {
+      "title": "Platform Settings",
+      "tiers": "Subscription Tiers",
+      "apiKey": "API Key",
+      "platformDefaults": "Platform Defaults",
+      "changePassword": "Change Password",
+      "saveButton": "Save Changes"
+    }
+  },
+  "customer": {
+    "nav": {
+      "chat": "Chat",
+      "menu": "Menu",
+      "cart": "Cart",
+      "games": "Games",
+      "bill": "Bill",
+      "review": "Review",
+      "about": "About"
+    },
+    "splash": {
+      "welcome": "Welcome to",
+      "table": "Table {number}",
+      "loading": "Setting up your table...",
+      "tagline": "TAP . ORDER . ENJOY"
+    },
+    "chat": {
+      "placeholder": "Type a message...",
+      "send": "Send",
+      "typing": "typing...",
+      "today": "Today",
+      "connecting": "Connecting to your waiter…",
+      "startingSession": "Starting your session…",
+      "quickReplies": {
+        "seeMenu": "Show me the menu",
+        "recommendations": "What do you recommend?",
+        "allergies": "I have allergies",
+        "orderNow": "I'm ready to order",
+        "callWaiter": "Call waiter",
+        "getBill": "Get the bill"
+      },
+      "orderConfirmed": "Order confirmed!",
+      "orderCard": {
+        "title": "Order Summary",
+        "confirm": "Place Order",
+        "modify": "Modify"
+      }
+    },
+    "menu": {
+      "searchPlaceholder": "Search dishes...",
+      "vegOnly": "Veg Only",
+      "allItems": "All",
+      "addToCart": "Add",
+      "added": "Added",
+      "outOfStock": "Out of Stock",
+      "chefPick": "Chef's Pick",
+      "popular": "Popular",
+      "spicy": "Spicy",
+      "prepTime": "{time} min",
+      "allergens": "Contains: {allergens}",
+      "allergenWarning": "Contains your allergens!",
+      "noItems": "No dishes in this category"
+    },
+    "cart": {
+      "title": "Your Cart",
+      "empty": "Your cart is empty",
+      "emptySubtitle": "Browse our menu and add some dishes",
+      "browseMenu": "Browse Menu",
+      "specialInstructions": "Special instructions...",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "discount": "Discount",
+      "total": "Total",
+      "promoCode": "Promo code",
+      "applyPromo": "Apply",
+      "placeOrder": "Place Order",
+      "placing": "Placing order…",
+      "orderSummary": "Order summary",
+      "orderSuccess": "Order placed successfully!",
+      "allergenSummary": "Allergen Summary",
+      "items": "{count} items"
+    },
+    "games": {
+      "title": "Games & Rewards",
+      "lockedMessage": "Place an order to unlock games!",
+      "spinWheel": {
+        "title": "Spin the Wheel",
+        "description": "Spin for a chance to win a discount or free item",
+        "spinButton": "Spin!",
+        "spinning": "Spinning...",
+        "won": "You won: {prize}!",
+        "betterLuck": "Better luck next time!"
+      },
+      "trivia": {
+        "title": "Food Trivia",
+        "description": "Answer 5 questions correctly for 5% off your bill",
+        "startButton": "Start Quiz",
+        "nextButton": "Next",
+        "score": "Score: {correct}/{total}",
+        "won": "You got {correct}/5 correct — 5% discount applied!",
+        "lost": "Better luck next time! You got {correct}/5 correct."
+      },
+      "billEstimator": {
+        "title": "Estimate the Bill",
+        "description": "Guess your total within 10% to win 5% off",
+        "inputLabel": "Your estimate",
+        "submitButton": "Submit Guess",
+        "won": "Great guess! 5% discount applied!",
+        "lost": "So close! The actual total was {actual}"
+      }
+    },
+    "bill": {
+      "title": "Your Order",
+      "items": "Items",
+      "subtotal": "Subtotal",
+      "tax": "Tax / VAT",
+      "discount": "Discount",
+      "tip": "Tip",
+      "total": "Total",
+      "addTip": "Add a Tip",
+      "tipOptions": {
+        "ten": "10%",
+        "fifteen": "15%",
+        "twenty": "20%",
+        "custom": "Custom"
+      },
+      "payOnline": "Pay Online",
+      "callCardMachine": "Call for Card Machine",
+      "notifying": "Notifying…",
+      "cardMachineNote": "Card machine option brings a representative to your table",
+      "payButton": "Pay Now",
+      "splitBill": "Split Bill",
+      "downloadReceipt": "Download Receipt",
+      "paymentSuccess": "Payment Successful!",
+      "redirectingReview": "Redirecting you to leave a review…",
+      "noOrders": "No orders yet",
+      "noOrdersSubtitle": "Your order details will appear here once you place an order."
+    },
+    "review": {
+      "title": "How was your experience?",
+      "subtitle": "Your feedback helps us improve",
+      "ratingLabel": "Rate your visit",
+      "commentLabel": "Leave a comment",
+      "commentPlaceholder": "Tell us about your experience...",
+      "emotions": {
+        "amazing": "Amazing!",
+        "good": "Good",
+        "okay": "Okay",
+        "poor": "Poor"
+      },
+      "submitButton": "Submit Review",
+      "thankYou": "Thank you for your feedback!",
+      "farewell": "We hope to see you again soon!"
+    },
+    "about": {
+      "title": "About Us",
+      "ourStory": "Our Story",
+      "specialties": "Our Specialties",
+      "openingHours": "Opening Hours",
+      "contact": "Contact",
+      "findUs": "Find Us",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "closed": "Closed"
+    }
+  },
+  "errors": {
+    "unauthorized": "Unauthorized",
+    "forbidden": "Access denied",
+    "notFound": "Not found",
+    "serverError": "Server error. Please try again.",
+    "networkError": "Network error. Please check your connection.",
+    "restaurantNotFound": "Restaurant not found",
+    "tableNotFound": "Table not found",
+    "trialExpired": "Your trial has expired. Please upgrade."
+  }
+}

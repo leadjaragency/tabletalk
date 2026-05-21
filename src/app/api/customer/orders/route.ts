@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient } from "@/lib/db";
+import type { Country } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -17,15 +19,16 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "sessionId and restaurant required." }, { status: 400 });
     }
 
-    const restaurant = await prisma.restaurant.findFirst({
-      where:  { slug: restaurantSlug, status: "active" },
-      select: { id: true, taxRate: true },
-    });
-    if (!restaurant) {
+    let restaurant: Awaited<ReturnType<typeof getRestaurantFromSlug>>;
+    try {
+      restaurant = await getRestaurantFromSlug(restaurantSlug);
+    } catch {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
     }
 
-    const session = await prisma.tableSession.findUnique({
+    const db = getPrismaClient(restaurant.country as Country);
+
+    const session = await db.tableSession.findUnique({
       where:  { id: sessionId },
       select: { id: true, restaurantId: true, discount: true },
     });
@@ -33,7 +36,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });
     }
 
-    const orders = await prisma.order.findMany({
+    const orders = await db.order.findMany({
       where:   { sessionId, restaurantId: restaurant.id },
       orderBy: { createdAt: "asc" },
       select: {

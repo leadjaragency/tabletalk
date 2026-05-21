@@ -1,7 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient, prisma as prismaCA, prismaDE } from "@/lib/db";
+import type { Country } from "@/types";
 import { z } from "zod";
 
 const CreateSessionSchema = z.object({
@@ -30,21 +32,21 @@ export async function POST(req: Request) {
 
     const { restaurantSlug, tableNumber } = parsed.data;
 
-    // ── Validate restaurant ──────────────────────────────────────────────
-    const restaurant = await prisma.restaurant.findFirst({
-      where: { slug: restaurantSlug, status: "active" },
-      select: { id: true },
-    });
-
-    if (!restaurant) {
+    // ── Validate restaurant (searches both CA and DE schemas) ────────────
+    let restaurant: Awaited<ReturnType<typeof getRestaurantFromSlug>>;
+    try {
+      restaurant = await getRestaurantFromSlug(restaurantSlug);
+    } catch {
       return NextResponse.json(
         { error: "Restaurant not found or not active." },
         { status: 404 }
       );
     }
 
+    const db = getPrismaClient(restaurant.country as Country);
+
     // ── Validate table ───────────────────────────────────────────────────
-    const table = await prisma.table.findUnique({
+    const table = await db.table.findUnique({
       where: {
         restaurantId_number: {
           restaurantId: restaurant.id,
@@ -77,7 +79,7 @@ export async function POST(req: Request) {
     let effectiveWaiter  = table.waiter;
 
     if (table.mergedIntoId) {
-      const primary = await prisma.table.findUnique({
+      const primary = await db.table.findUnique({
         where:  { id: table.mergedIntoId },
         select: {
           id:     true,
@@ -91,7 +93,7 @@ export async function POST(req: Request) {
     }
 
     // ── Guard: if primary already has an active session, join it ─────────
-    const existing = await prisma.tableSession.findFirst({
+    const existing = await db.tableSession.findFirst({
       where:  { tableId: effectiveTableId, endedAt: null },
       select: { id: true },
     });
@@ -104,15 +106,15 @@ export async function POST(req: Request) {
     }
 
     // ── Create session + mark primary table occupied (transaction) ────────
-    const [session] = await prisma.$transaction([
-      prisma.tableSession.create({
+    const [session] = await db.$transaction([
+      db.tableSession.create({
         data: {
           restaurantId: restaurant.id,
           tableId:      effectiveTableId,
         },
         select: { id: true },
       }),
-      prisma.table.update({
+      db.table.update({
         where: { id: effectiveTableId },
         data:  { status: "occupied" },
       }),
@@ -142,15 +144,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "sessionId required." }, { status: 400 });
     }
 
-    const session = await prisma.tableSession.findUnique({
-      where:  { id: sessionId },
-      select: {
-        gamePlayUsed: true,
-        discount:     true,
-        endedAt:      true,
-        orders:       { select: { id: true }, take: 1 },
-      },
-    });
+    const sessionSelect = {
+      gamePlayUsed: true,
+      discount:     true,
+      endedAt:      true,
+      orders:       { select: { id: true }, take: 1 },
+    } as const;
+
+    let session = await prismaCA.tableSession.findUnique({ where: { id: sessionId }, select: sessionSelect });
+    if (!session) {
+      session = await prismaDE.tableSession.findUnique({ where: { id: sessionId }, select: sessionSelect });
+    }
 
     if (!session) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });

@@ -1,8 +1,5 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-
-import { prisma } from "@/lib/db";
 import { AutoRefresh } from "@/components/admin/AutoRefresh";
 import { WaitersPageClient } from "@/components/admin/WaitersPageClient";
 
@@ -16,13 +13,14 @@ export default async function WaitersPage() {
   }
 
   const restaurantId = session.user.restaurantId;
+  const db = getPrismaForSession(session);
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
   const [waiters, allTables, todayChatsRaw, todayOrdersRaw] = await Promise.all([
     // All waiters with table assignments and chat session counts
-    prisma.aIWaiter.findMany({
+    db.aIWaiter.findMany({
       where:   { restaurantId },
       orderBy: { createdAt: "asc" },
       include: {
@@ -35,21 +33,21 @@ export default async function WaitersPage() {
     }),
 
     // All tables (for the assignment picker in the modal)
-    prisma.table.findMany({
+    db.table.findMany({
       where:   { restaurantId },
       orderBy: { number: "asc" },
       select:  { id: true, number: true, status: true },
     }),
 
     // Today's chat sessions grouped by waiter
-    prisma.chatSession.groupBy({
+    db.chatSession.groupBy({
       by:    ["waiterId"],
       where: { createdAt: { gte: todayStart } },
       _count: { _all: true },
     }),
 
     // Today's orders per waiter (via table → session → order path)
-    prisma.order.groupBy({
+    db.order.groupBy({
       by:    ["restaurantId"],   // We'll compute per-waiter in JS from table data
       where: { restaurantId, createdAt: { gte: todayStart } },
       _count: { _all: true },
@@ -64,7 +62,7 @@ export default async function WaitersPage() {
 
   // For today's orders per waiter: look up orders via their table's waiter assignment
   // (simpler: count orders on tables currently assigned to each waiter)
-  const todayOrdersPerTable = await prisma.order.groupBy({
+  const todayOrdersPerTable = await db.order.groupBy({
     by:    ["tableId"],
     where: { restaurantId, createdAt: { gte: todayStart } },
     _count: { _all: true },

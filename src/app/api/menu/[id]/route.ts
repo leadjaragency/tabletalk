@@ -1,8 +1,7 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 
 
 export const dynamic = "force-dynamic";
@@ -20,8 +19,9 @@ export async function GET(_req: Request, { params }: Ctx) {
     if (!session?.user.restaurantId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    const db = getPrismaForSession(session);
 
-    const dish = await prisma.dish.findUnique({
+    const dish = await db.dish.findUnique({
       where:   { id },
       include: { category: { select: { id: true, name: true } } },
     });
@@ -68,9 +68,10 @@ export async function PUT(req: Request, { params }: Ctx) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
     // Confirm dish belongs to this restaurant
-    const existing = await prisma.dish.findUnique({
+    const existing = await db.dish.findUnique({
       where:  { id },
       select: { restaurantId: true },
     });
@@ -89,7 +90,7 @@ export async function PUT(req: Request, { params }: Ctx) {
 
     // If categoryId is being changed, verify the new category belongs here
     if (parsed.data.categoryId) {
-      const cat = await prisma.category.findUnique({
+      const cat = await db.category.findUnique({
         where:  { id: parsed.data.categoryId },
         select: { restaurantId: true },
       });
@@ -98,7 +99,7 @@ export async function PUT(req: Request, { params }: Ctx) {
       }
     }
 
-    const dish = await prisma.dish.update({
+    const dish = await db.dish.update({
       where:   { id },
       data:    parsed.data,
       include: { category: { select: { id: true, name: true, sortOrder: true } } },
@@ -122,8 +123,9 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     if (!session?.user.restaurantId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    const db = getPrismaForSession(session);
 
-    const existing = await prisma.dish.findUnique({
+    const existing = await db.dish.findUnique({
       where:  { id },
       select: { restaurantId: true, _count: { select: { orderItems: true } } },
     });
@@ -135,14 +137,14 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     // Soft-delete if the dish has been ordered (preserve history)
     // Hard-delete if no orders reference it
     if (existing._count.orderItems > 0) {
-      await prisma.dish.update({
+      await db.dish.update({
         where: { id },
         data:  { isAvailable: false },
       });
       return NextResponse.json({ deleted: false, message: "Dish hidden (has order history)." });
     }
 
-    await prisma.dish.delete({ where: { id } });
+    await db.dish.delete({ where: { id } });
     return NextResponse.json({ deleted: true });
   } catch (error) {
     console.error("[DELETE /api/menu/[id]]", error);

@@ -77,6 +77,8 @@ export interface BuildPromptParams {
   session:          PromptSession;
   currentCart:      PromptCartItem[];
   activePromotions: PromptPromotion[];
+  /** ISO language code hint from the restaurant's country (e.g. "de" for Germany). */
+  preferredLanguage?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -172,6 +174,7 @@ export function buildWaiterPrompt({
   session,
   currentCart,
   activePromotions,
+  preferredLanguage,
 }: BuildPromptParams): string {
   const dietaryLine =
     session.dietaryPrefs.length > 0
@@ -182,10 +185,16 @@ export function buildWaiterPrompt({
     ? `Yes — ${(session.discount * 100).toFixed(0)}% discount applied`
     : "None";
 
+  const languageInstruction = preferredLanguage === "de"
+    ? `LANGUAGE: This is a German restaurant. Always respond in German (Deutsch) unless the customer clearly writes in another language — in that case match their language.`
+    : `LANGUAGE: Detect the language the customer writes in and always respond in that same language. Default to English if unclear.`;
+
   return `\
 ═══════════════════════════════════════
 HOW YOU MUST WRITE — READ THIS FIRST
 ═══════════════════════════════════════
+${languageInstruction}
+
 You are a friendly, professional restaurant waiter having a natural conversation via chat.
 Write exactly like a real waiter would speak — warm, relaxed, and human.
 

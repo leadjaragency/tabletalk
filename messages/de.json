@@ -1,0 +1,613 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "loading": "Laden...",
+    "error": "Etwas ist schiefgelaufen",
+    "success": "Erfolgreich",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "all": "Alle",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "yes": "Ja",
+    "no": "Nein",
+    "back": "Zurück",
+    "next": "Weiter",
+    "submit": "Absenden",
+    "name": "Name",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "address": "Adresse",
+    "status": "Status",
+    "actions": "Aktionen",
+    "view": "Ansehen",
+    "print": "Drucken",
+    "download": "Herunterladen",
+    "refresh": "Aktualisieren",
+    "settings": "Einstellungen",
+    "logout": "Abmelden",
+    "required": "Dieses Feld ist erforderlich",
+    "optional": "Optional",
+    "noResults": "Keine Ergebnisse gefunden",
+    "today": "Heute",
+    "thisMonth": "Diesen Monat"
+  },
+  "auth": {
+    "login": {
+      "title": "Willkommen zurück",
+      "subtitle": "Melden Sie sich bei Ihrem ServeMyTable-Konto an",
+      "emailLabel": "E-Mail-Adresse",
+      "passwordLabel": "Passwort",
+      "submitButton": "Anmelden",
+      "forgotPassword": "Passwort vergessen?",
+      "noAccount": "Noch kein Konto?",
+      "signUp": "Registrieren",
+      "invalidCredentials": "Ungültige E-Mail oder Passwort",
+      "loginError": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
+    },
+    "signup": {
+      "title": "Ihr Restaurant erstellen",
+      "subtitle": "Begeistern Sie Ihre Gäste mit KI-gesteuertem Service",
+      "restaurantName": "Restaurantname",
+      "cuisine": "Küchenstil",
+      "ownerName": "Ihr vollständiger Name",
+      "emailLabel": "E-Mail-Adresse",
+      "passwordLabel": "Passwort",
+      "phoneLabel": "Telefonnummer",
+      "addressLabel": "Adresse",
+      "submitButton": "Konto erstellen",
+      "alreadyHaveAccount": "Bereits ein Konto?",
+      "signIn": "Anmelden",
+      "successTitle": "Antrag eingereicht",
+      "successMessage": "Ihr Restaurantkonto wurde zur Überprüfung eingereicht. Wir benachrichtigen Sie per E-Mail, sobald es genehmigt wurde."
+    },
+    "pending": {
+      "title": "Konto wird überprüft",
+      "message": "Ihr Restaurantkonto wird derzeit von unserem Team geprüft. Sie erhalten eine E-Mail, sobald Ihr Konto genehmigt wurde.",
+      "contactSupport": "Support kontaktieren",
+      "checkStatus": "Status prüfen"
+    },
+    "forgotPassword": {
+      "title": "Passwort zurücksetzen",
+      "subtitle": "Geben Sie Ihre E-Mail ein und wir senden Ihnen einen Reset-Link",
+      "emailLabel": "E-Mail-Adresse",
+      "submitButton": "Reset-Link senden",
+      "backToLogin": "Zurück zur Anmeldung",
+      "emailSent": "Falls ein Konto mit dieser E-Mail existiert, wurde ein Reset-Link gesendet."
+    },
+    "resetPassword": {
+      "title": "Neues Passwort festlegen",
+      "newPasswordLabel": "Neues Passwort",
+      "confirmPasswordLabel": "Passwort bestätigen",
+      "submitButton": "Passwort aktualisieren",
+      "passwordMismatch": "Passwörter stimmen nicht überein",
+      "successMessage": "Passwort erfolgreich aktualisiert"
+    },
+    "trialExpired": {
+      "title": "Testzeitraum beendet",
+      "message": "Ihr 14-tägiger kostenloser Test ist abgelaufen. Bitte upgraden Sie, um ServeMyTable weiterhin zu nutzen.",
+      "upgradeButton": "Jetzt upgraden",
+      "contactUs": "Kontakt aufnehmen"
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "tables": "Tische",
+      "menu": "Speisekarte",
+      "orders": "Bestellungen",
+      "waiters": "KI-Kellner",
+      "qrCodes": "QR-Codes",
+      "promotions": "Aktionen",
+      "analytics": "Analysen",
+      "pos": "Kassensystem",
+      "team": "Team",
+      "settings": "Einstellungen"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "activeTables": "Aktive Tische",
+      "ordersToday": "Bestellungen heute",
+      "revenueToday": "Umsatz heute",
+      "avgWaitTime": "Ø Wartezeit",
+      "liveOrders": "Aktuelle Bestellungen",
+      "waitersStatus": "KI-Kellner Status",
+      "noLiveOrders": "Momentan keine aktiven Bestellungen",
+      "minutes": "Min.",
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "tables": {
+      "title": "Grundriss",
+      "addTable": "Tisch hinzufügen",
+      "filterAll": "Alle",
+      "filterOccupied": "Besetzt",
+      "filterOrdering": "Bestellt",
+      "filterBilling": "Rechnung",
+      "filterEmpty": "Frei",
+      "tableNumber": "Tisch {number}",
+      "seats": "{count} Plätze",
+      "waiter": "Kellner",
+      "noWaiter": "Kein Kellner zugewiesen",
+      "status": {
+        "empty": "Frei",
+        "occupied": "Besetzt",
+        "ordering": "Bestellt",
+        "billing": "Rechnung"
+      },
+      "addModal": {
+        "title": "Neuen Tisch hinzufügen",
+        "tableNumber": "Tischnummer",
+        "seats": "Anzahl der Plätze",
+        "assignWaiter": "KI-Kellner zuweisen",
+        "noWaiterOption": "Kein Kellner",
+        "submitButton": "Tisch hinzufügen"
+      },
+      "mergeModal": {
+        "title": "Tische zusammenführen",
+        "description": "Tische für eine Gruppe auswählen",
+        "primaryTable": "Haupttisch",
+        "secondaryTables": "Nebentische",
+        "submitButton": "Tische zusammenführen",
+        "unmergeButton": "Trennen",
+        "mergeWarning": "Nebentische müssen frei sein"
+      }
+    },
+    "menu": {
+      "title": "Speisekartenverwaltung",
+      "addDish": "Gericht hinzufügen",
+      "addCategory": "Kategorie hinzufügen",
+      "searchPlaceholder": "Gerichte suchen...",
+      "columns": {
+        "dish": "Gericht",
+        "category": "Kategorie",
+        "price": "Preis",
+        "spice": "Schärfe",
+        "prepTime": "Zubereitungszeit",
+        "available": "Verfügbar"
+      },
+      "badges": {
+        "veg": "Veg.",
+        "vegan": "Vegan",
+        "glutenFree": "Glutenfrei",
+        "chefPick": "Chefempfehlung",
+        "popular": "Beliebt"
+      },
+      "dishModal": {
+        "addTitle": "Neues Gericht hinzufügen",
+        "editTitle": "Gericht bearbeiten",
+        "name": "Gerichtname",
+        "description": "Beschreibung",
+        "price": "Preis",
+        "category": "Kategorie",
+        "spiceLevel": "Schärfegrad",
+        "prepTime": "Zubereitungszeit (Minuten)",
+        "imageEmoji": "Emoji",
+        "allergens": "Allergene",
+        "isVeg": "Vegetarisch",
+        "isVegan": "Vegan",
+        "isGlutenFree": "Glutenfrei",
+        "isChefPick": "Chefempfehlung",
+        "isPopular": "Beliebt",
+        "isAvailable": "Verfügbar",
+        "submitButton": "Gericht speichern"
+      },
+      "deleteConfirm": "Möchten Sie dieses Gericht wirklich löschen?"
+    },
+    "orders": {
+      "title": "Aktuelle Bestellungen",
+      "status": {
+        "received": "Eingegangen",
+        "preparing": "In Zubereitung",
+        "ready": "Fertig",
+        "served": "Serviert"
+      },
+      "table": "Tisch {number}",
+      "items": "{count} Gerichte",
+      "total": "Gesamt",
+      "specialNotes": "Besondere Hinweise",
+      "allergenWarning": "Enthält Allergene",
+      "advanceStatus": "Status weiterschalten",
+      "noOrders": "Keine Bestellungen in dieser Phase",
+      "newOrderAlert": "Neue Bestellung eingegangen!"
+    },
+    "waiters": {
+      "title": "KI-Kellner",
+      "addWaiter": "Neuen KI-Kellner hinzufügen",
+      "noWaiters": "Noch keine KI-Kellner konfiguriert",
+      "tables": "{count} Tische",
+      "languages": "Sprachen",
+      "personality": "Persönlichkeit",
+      "tone": "Tonalität",
+      "addModal": {
+        "title": "KI-Kellner hinzufügen",
+        "editTitle": "KI-Kellner bearbeiten",
+        "name": "Kellnername",
+        "avatar": "Avatar-Emoji",
+        "personality": "Persönlichkeitsbeschreibung",
+        "tone": "Tonalität",
+        "toneOptions": {
+          "friendly": "Freundlich",
+          "professional": "Professionell",
+          "casual": "Locker",
+          "formal": "Förmlich"
+        },
+        "languages": "Sprachen",
+        "greeting": "Begrüßungstext",
+        "submitButton": "Kellner speichern"
+      },
+      "deleteConfirm": "Möchten Sie diesen Kellner wirklich löschen?"
+    },
+    "qrCodes": {
+      "title": "QR-Codes",
+      "printAll": "Alle drucken",
+      "downloadPdf": "PDF herunterladen",
+      "table": "Tisch {number}",
+      "regenerate": "Neu generieren",
+      "noTables": "Keine Tische gefunden. Fügen Sie zuerst Tische hinzu.",
+      "downloadSuccess": "QR-Codes erfolgreich heruntergeladen"
+    },
+    "promotions": {
+      "title": "Aktionen",
+      "addPromotion": "Aktion hinzufügen",
+      "noPromotions": "Noch keine Aktionen eingerichtet",
+      "type": {
+        "percentage": "Prozentrabatt",
+        "fixed": "Festbetrag-Rabatt",
+        "freeItem": "Gratisgericht"
+      },
+      "valid": "Gültig",
+      "expired": "Abgelaufen",
+      "expires": "Läuft ab {date}",
+      "minOrder": "Mindestbestellung {amount}",
+      "addModal": {
+        "title": "Aktion hinzufügen",
+        "editTitle": "Aktion bearbeiten",
+        "promotionTitle": "Titel",
+        "description": "Beschreibung",
+        "type": "Typ",
+        "value": "Wert",
+        "validFrom": "Gültig ab",
+        "validUntil": "Gültig bis",
+        "minOrder": "Mindestbestellung",
+        "freeItem": "Gratisgericht",
+        "isActive": "Aktiv",
+        "submitButton": "Aktion speichern"
+      }
+    },
+    "analytics": {
+      "title": "Analysen",
+      "weeklyRevenue": "Wochenumsatz",
+      "satisfaction": "Kundenzufriedenheit",
+      "gameEngagement": "Spielbeteiligung",
+      "topDishes": "Meistverkaufte Gerichte",
+      "recentReviews": "Neueste Bewertungen",
+      "orders": "Bestellungen",
+      "rating": "Bewertung",
+      "noReviews": "Noch keine Bewertungen",
+      "noOrders": "Noch keine Bestelldaten"
+    },
+    "pos": {
+      "title": "Kassensystem-Integration",
+      "status": "Verbindungsstatus",
+      "connected": "Verbunden",
+      "disconnected": "Getrennt",
+      "syncStats": "Synchronisationsstatistik",
+      "orderFlow": "Bestellablauf",
+      "settings": "Kassensystem-Einstellungen",
+      "totalSynced": "Insgesamt synchronisiert",
+      "lastSync": "Letzte Synchronisation",
+      "configure": "Konfigurieren"
+    },
+    "team": {
+      "title": "Team",
+      "inviteMember": "Mitglied einladen",
+      "noMembers": "Noch keine Teammitglieder",
+      "roles": {
+        "restaurant_owner": "Inhaber",
+        "restaurant_manager": "Manager"
+      },
+      "inviteModal": {
+        "title": "Teammitglied einladen",
+        "emailLabel": "E-Mail-Adresse",
+        "roleLabel": "Rolle",
+        "submitButton": "Einladung senden"
+      },
+      "removeConfirm": "Dieses Teammitglied entfernen?",
+      "joinedDate": "Beigetreten {date}"
+    },
+    "settings": {
+      "title": "Restauranteinstellungen",
+      "profile": "Restaurantprofil",
+      "restaurantName": "Restaurantname",
+      "cuisine": "Küchenstil",
+      "tagline": "Slogan",
+      "phone": "Telefon",
+      "address": "Adresse",
+      "hours": "Öffnungszeiten",
+      "openTime": "Öffnet um",
+      "closeTime": "Schließt um",
+      "saveButton": "Änderungen speichern",
+      "dangerZone": "Gefahrenzone",
+      "resetData": "Demo-Daten zurücksetzen",
+      "resetConfirm": "Alle Bestellungen und Sitzungen werden gelöscht. Sind Sie sicher?",
+      "savedSuccess": "Einstellungen erfolgreich gespeichert"
+    }
+  },
+  "superAdmin": {
+    "nav": {
+      "overview": "Übersicht",
+      "restaurants": "Restaurants",
+      "approvals": "Genehmigungen",
+      "billing": "Abrechnung",
+      "apiUsage": "API-Nutzung",
+      "analytics": "Analysen",
+      "settings": "Einstellungen"
+    },
+    "overview": {
+      "title": "Plattformübersicht",
+      "activeRestaurants": "Aktive Restaurants",
+      "ordersToday": "Bestellungen heute",
+      "monthlyRevenue": "Monatsumsatz",
+      "apiCostToday": "API-Kosten heute",
+      "recentActivity": "Letzte Aktivitäten",
+      "pendingApprovals": "ausstehende Genehmigungen",
+      "noActivity": "Keine aktuellen Aktivitäten"
+    },
+    "restaurants": {
+      "title": "Alle Restaurants",
+      "search": "Restaurants suchen...",
+      "columns": {
+        "name": "Restaurant",
+        "cuisine": "Küchenstil",
+        "status": "Status",
+        "tier": "Tarif",
+        "tables": "Tische",
+        "ordersToday": "Heutige Bestellungen",
+        "country": "Land"
+      },
+      "statusFilter": {
+        "all": "Alle",
+        "active": "Aktiv",
+        "pending": "Ausstehend",
+        "suspended": "Gesperrt"
+      },
+      "actions": {
+        "view": "Ansehen",
+        "editTier": "Tarif ändern",
+        "suspend": "Sperren",
+        "activate": "Aktivieren",
+        "disable": "Deaktivieren"
+      }
+    },
+    "approvals": {
+      "title": "Ausstehende Genehmigungen",
+      "noPending": "Keine ausstehenden Genehmigungen",
+      "approve": "Genehmigen",
+      "reject": "Ablehnen",
+      "rejectReason": "Ablehnungsgrund",
+      "assignTier": "Tarif zuweisen",
+      "appliedOn": "Beantragt am {date}",
+      "approveSuccess": "Restaurant erfolgreich genehmigt",
+      "rejectSuccess": "Antrag abgelehnt"
+    },
+    "billing": {
+      "title": "Abrechnung",
+      "columns": {
+        "restaurant": "Restaurant",
+        "tier": "Tarif",
+        "monthlyPrice": "Monatspreis",
+        "apiCost": "API-Kosten",
+        "total": "Gesamt",
+        "status": "Status"
+      },
+      "editTier": "Tarif ändern",
+      "noData": "Keine Abrechnungsdaten"
+    },
+    "apiUsage": {
+      "title": "API-Nutzung",
+      "columns": {
+        "restaurant": "Restaurant",
+        "calls": "API-Aufrufe",
+        "tokens": "Token",
+        "cost": "Kosten"
+      },
+      "dailyChart": "Tägliche Nutzung",
+      "noData": "Keine API-Nutzungsdaten"
+    },
+    "analytics": {
+      "title": "Plattformanalysen",
+      "byCuisine": "Restaurants nach Küchenstil",
+      "ordersTrend": "Bestelltrend",
+      "busiestRestaurants": "Aktivste Restaurants",
+      "avgSatisfaction": "Ø Zufriedenheit",
+      "totalOrders": "Bestellungen gesamt",
+      "totalRestaurants": "Restaurants gesamt"
+    },
+    "settings": {
+      "title": "Plattformeinstellungen",
+      "tiers": "Abonnementtarife",
+      "apiKey": "API-Schlüssel",
+      "platformDefaults": "Plattform-Standards",
+      "changePassword": "Passwort ändern",
+      "saveButton": "Änderungen speichern"
+    }
+  },
+  "customer": {
+    "nav": {
+      "chat": "Chat",
+      "menu": "Speisekarte",
+      "cart": "Warenkorb",
+      "games": "Spiele",
+      "bill": "Rechnung",
+      "review": "Bewertung",
+      "about": "Über uns"
+    },
+    "splash": {
+      "welcome": "Willkommen bei",
+      "table": "Tisch {number}",
+      "loading": "Ihren Tisch vorbereiten...",
+      "tagline": "TIPPEN . BESTELLEN . GENUSS"
+    },
+    "chat": {
+      "placeholder": "Nachricht eingeben...",
+      "send": "Senden",
+      "typing": "schreibt...",
+      "today": "Heute",
+      "connecting": "Verbindung zum Kellner wird hergestellt…",
+      "startingSession": "Sitzung wird gestartet…",
+      "quickReplies": {
+        "seeMenu": "Speisekarte anzeigen",
+        "recommendations": "Was empfehlen Sie?",
+        "allergies": "Ich habe Allergien",
+        "orderNow": "Ich möchte bestellen",
+        "callWaiter": "Kellner rufen",
+        "getBill": "Rechnung bitte"
+      },
+      "orderConfirmed": "Bestellung bestätigt!",
+      "orderCard": {
+        "title": "Bestellübersicht",
+        "confirm": "Bestellen",
+        "modify": "Ändern"
+      }
+    },
+    "menu": {
+      "searchPlaceholder": "Gerichte suchen...",
+      "vegOnly": "Nur Vegetarisch",
+      "allItems": "Alle",
+      "addToCart": "Hinzufügen",
+      "added": "Hinzugefügt",
+      "outOfStock": "Nicht verfügbar",
+      "chefPick": "Chefempfehlung",
+      "popular": "Beliebt",
+      "spicy": "Scharf",
+      "prepTime": "{time} Min.",
+      "allergens": "Enthält: {allergens}",
+      "allergenWarning": "Enthält Ihre Allergene!",
+      "noItems": "Keine Gerichte in dieser Kategorie"
+    },
+    "cart": {
+      "title": "Ihr Warenkorb",
+      "empty": "Ihr Warenkorb ist leer",
+      "emptySubtitle": "Stöbern Sie in unserer Speisekarte",
+      "browseMenu": "Zur Speisekarte",
+      "specialInstructions": "Besondere Wünsche...",
+      "subtotal": "Zwischensumme",
+      "tax": "MwSt.",
+      "discount": "Rabatt",
+      "total": "Gesamt",
+      "promoCode": "Aktionscode",
+      "applyPromo": "Einlösen",
+      "placeOrder": "Jetzt bestellen",
+      "placing": "Bestellung wird aufgegeben…",
+      "orderSummary": "Bestellübersicht",
+      "orderSuccess": "Bestellung erfolgreich aufgegeben!",
+      "allergenSummary": "Allergenzusammenfassung",
+      "items": "{count} Gerichte"
+    },
+    "games": {
+      "title": "Spiele & Gewinne",
+      "lockedMessage": "Geben Sie eine Bestellung auf, um Spiele freizuschalten!",
+      "spinWheel": {
+        "title": "Glücksrad drehen",
+        "description": "Drehen Sie das Rad für einen Rabatt oder ein Gratisprodukt",
+        "spinButton": "Drehen!",
+        "spinning": "Dreht sich...",
+        "won": "Sie haben gewonnen: {prize}!",
+        "betterLuck": "Beim nächsten Mal klappt's!"
+      },
+      "trivia": {
+        "title": "Food-Quiz",
+        "description": "Beantworten Sie 5 Fragen richtig und erhalten Sie 5% Rabatt",
+        "startButton": "Quiz starten",
+        "nextButton": "Weiter",
+        "score": "Punkte: {correct}/{total}",
+        "won": "{correct}/5 richtig — 5% Rabatt wurde angewendet!",
+        "lost": "Schade! Sie haben {correct}/5 richtig beantwortet."
+      },
+      "billEstimator": {
+        "title": "Rechnung schätzen",
+        "description": "Schätzen Sie Ihre Gesamtrechnung auf 10% genau für 5% Rabatt",
+        "inputLabel": "Ihre Schätzung",
+        "submitButton": "Schätzung abgeben",
+        "won": "Super getippt! 5% Rabatt wurde angewendet!",
+        "lost": "Knapp daneben! Der tatsächliche Betrag war {actual}"
+      }
+    },
+    "bill": {
+      "title": "Ihre Bestellung",
+      "items": "Gerichte",
+      "subtotal": "Zwischensumme",
+      "tax": "MwSt.",
+      "discount": "Rabatt",
+      "tip": "Trinkgeld",
+      "total": "Gesamt",
+      "addTip": "Trinkgeld hinzufügen",
+      "tipOptions": {
+        "ten": "10%",
+        "fifteen": "15%",
+        "twenty": "20%",
+        "custom": "Individuell"
+      },
+      "payOnline": "Online bezahlen",
+      "callCardMachine": "Kartenzahlung anfordern",
+      "notifying": "Wird benachrichtigt…",
+      "cardMachineNote": "Ein Mitarbeiter bringt das Kartenlesegerät zu Ihrem Tisch",
+      "payButton": "Jetzt bezahlen",
+      "splitBill": "Rechnung teilen",
+      "downloadReceipt": "Beleg herunterladen",
+      "paymentSuccess": "Zahlung erfolgreich!",
+      "redirectingReview": "Sie werden zur Bewertungsseite weitergeleitet…",
+      "noOrders": "Noch keine Bestellungen",
+      "noOrdersSubtitle": "Ihre Bestelldetails erscheinen hier, sobald Sie bestellt haben."
+    },
+    "review": {
+      "title": "Wie war Ihr Besuch?",
+      "subtitle": "Ihr Feedback hilft uns, besser zu werden",
+      "ratingLabel": "Bewerten Sie Ihren Besuch",
+      "commentLabel": "Kommentar hinterlassen",
+      "commentPlaceholder": "Erzählen Sie uns von Ihrem Erlebnis...",
+      "emotions": {
+        "amazing": "Hervorragend!",
+        "good": "Gut",
+        "okay": "In Ordnung",
+        "poor": "Schlecht"
+      },
+      "submitButton": "Bewertung absenden",
+      "thankYou": "Vielen Dank für Ihr Feedback!",
+      "farewell": "Wir freuen uns, Sie bald wiederzusehen!"
+    },
+    "about": {
+      "title": "Über uns",
+      "ourStory": "Unsere Geschichte",
+      "specialties": "Unsere Spezialitäten",
+      "openingHours": "Öffnungszeiten",
+      "contact": "Kontakt",
+      "findUs": "So finden Sie uns",
+      "monday": "Montag",
+      "tuesday": "Dienstag",
+      "wednesday": "Mittwoch",
+      "thursday": "Donnerstag",
+      "friday": "Freitag",
+      "saturday": "Samstag",
+      "sunday": "Sonntag",
+      "closed": "Geschlossen"
+    }
+  },
+  "errors": {
+    "unauthorized": "Nicht autorisiert",
+    "forbidden": "Zugriff verweigert",
+    "notFound": "Nicht gefunden",
+    "serverError": "Serverfehler. Bitte versuchen Sie es erneut.",
+    "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+    "restaurantNotFound": "Restaurant nicht gefunden",
+    "tableNotFound": "Tisch nicht gefunden",
+    "trialExpired": "Ihr Test ist abgelaufen. Bitte upgraden Sie."
+  }
+}

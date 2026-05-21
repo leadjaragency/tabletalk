@@ -1,8 +1,5 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-
-import { prisma } from "@/lib/db";
 import { AutoRefresh } from "@/components/admin/AutoRefresh";
 import { TablesPageClient } from "@/components/admin/TablesPageClient";
 
@@ -17,9 +14,10 @@ export default async function TablesPage() {
 
   const restaurantId   = session.user.restaurantId;
   const restaurantSlug = session.user.restaurantSlug ?? "";
+  const db = getPrismaForSession(session);
 
   const [tables, waiters] = await Promise.all([
-    prisma.table.findMany({
+    db.table.findMany({
       where:   { restaurantId },
       orderBy: { number: "asc" },
       include: {
@@ -50,7 +48,7 @@ export default async function TablesPage() {
         },
       },
     }),
-    prisma.aIWaiter.findMany({
+    db.aIWaiter.findMany({
       where:   { restaurantId, isActive: true },
       orderBy: { name: "asc" },
       select:  { id: true, name: true, avatar: true },

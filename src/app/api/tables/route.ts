@@ -1,8 +1,6 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 
 
 export const dynamic = "force-dynamic";
@@ -18,8 +16,9 @@ export async function GET(_req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
-    const tables = await prisma.table.findMany({
+    const tables = await db.table.findMany({
       where:   { restaurantId },
       orderBy: { number: "asc" },
       include: {
@@ -75,6 +74,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
     const body   = await req.json();
     const parsed = CreateTableSchema.safeParse(body);
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
 
     // Validate waiterId belongs to this restaurant
     if (waiterId) {
-      const waiter = await prisma.aIWaiter.findUnique({
+      const waiter = await db.aIWaiter.findUnique({
         where:  { id: waiterId },
         select: { restaurantId: true, isActive: true },
       });
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const table = await prisma.table.create({
+    const table = await db.table.create({
       data: { restaurantId, number, seats, waiterId: waiterId ?? null },
       include: { waiter: { select: { id: true, name: true, avatar: true } } },
     });

@@ -1,8 +1,6 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 
 
 export const dynamic = "force-dynamic";
@@ -18,8 +16,9 @@ export async function GET(_req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
-    const waiters = await prisma.aIWaiter.findMany({
+    const waiters = await db.aIWaiter.findMany({
       where:   { restaurantId },
       orderBy: { createdAt: "asc" },
       include: {
@@ -59,6 +58,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
     const body   = await req.json();
     const parsed = CreateWaiterSchema.safeParse(body);
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
     // Validate that any assigned tables belong to this restaurant
     if (tableIds && tableIds.length > 0) {
-      const tables = await prisma.table.findMany({
+      const tables = await db.table.findMany({
         where:  { id: { in: tableIds }, restaurantId },
         select: { id: true },
       });
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const waiter = await prisma.aIWaiter.create({
+    const waiter = await db.aIWaiter.create({
       data: {
         ...waiterData,
         restaurantId,

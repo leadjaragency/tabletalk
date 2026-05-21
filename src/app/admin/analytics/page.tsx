@@ -1,42 +1,42 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import type { PrismaClient } from "@/generated/prisma/client";
 import { TrendingUp, Star, Gamepad2, ShoppingBag } from "lucide-react";
 import { RevenueExportButton } from "@/components/admin/RevenueExportButton";
 
 export const dynamic = "force-dynamic";
 
-async function getData(restaurantId: string) {
+async function getData(restaurantId: string, db: PrismaClient) {
   const now   = new Date();
   const day0  = new Date(now); day0.setHours(0, 0, 0, 0);
   const weekAgo = new Date(day0.getTime() - 6 * 86_400_000);
 
   const [weeklyOrders, topDishItems, recentReviews, allReviews, gameResults] =
     await Promise.all([
-      prisma.order.findMany({
+      db.order.findMany({
         where:   { restaurantId, createdAt: { gte: weekAgo } },
         select:  { total: true, createdAt: true },
         orderBy: { createdAt: "asc" },
       }),
-      prisma.orderItem.groupBy({
+      db.orderItem.groupBy({
         by:      ["dishId"],
         where:   { order: { restaurantId } },
         _sum:    { quantity: true },
         orderBy: { _sum: { quantity: "desc" } },
         take:    8,
       }),
-      prisma.review.findMany({
+      db.review.findMany({
         where:   { restaurantId },
         orderBy: { createdAt: "desc" },
         take:    9,
         include: { session: { select: { table: { select: { number: true } } } } },
       }),
-      prisma.review.aggregate({
+      db.review.aggregate({
         where:  { restaurantId },
         _avg:   { rating: true },
         _count: { id: true },
       }),
-      prisma.gameResult.aggregate({
+      db.gameResult.aggregate({
         where:  { restaurantId },
         _count: { id: true },
       }),
@@ -45,7 +45,7 @@ async function getData(restaurantId: string) {
   // Dish names
   const dishIds  = topDishItems.map((d) => d.dishId);
   const dishes   = dishIds.length > 0
-    ? await prisma.dish.findMany({
+    ? await db.dish.findMany({
         where:  { id: { in: dishIds } },
         select: { id: true, name: true, imageEmoji: true },
       })
@@ -116,10 +116,12 @@ export default async function AdminAnalyticsPage() {
   const session = await getRequiredSession();
   if (!session?.user.restaurantId) redirect("/auth/login");
 
+  const db = getPrismaForSession(session);
+
   const {
     weekRevenue, weeklyOrderCount, avgRating, totalReviews, totalGamePlays,
     dayLabels, revenueByDay, topDishes, recentReviews,
-  } = await getData(session.user.restaurantId);
+  } = await getData(session.user.restaurantId, db);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">

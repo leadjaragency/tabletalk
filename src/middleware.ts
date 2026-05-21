@@ -31,10 +31,21 @@ function jsonError(message: string, status: number, res: NextResponse) {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Detect country from subdomain: de.servemytable.ca → DE, everything else → CA
+  const host = req.headers.get("host") ?? "";
+  const country = host.startsWith("de.") ? "DE" : "CA";
+
   // Create a response object that Supabase SSR can write refreshed cookies into.
   // We MUST return this `res` (or a response derived from it) so the browser
   // receives the updated session cookie — never return a bare NextResponse.next().
-  let res = NextResponse.next({ request: req });
+  let res = NextResponse.next({
+    request: {
+      headers: new Headers({
+        ...Object.fromEntries(req.headers.entries()),
+        "x-country": country,
+      }),
+    },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

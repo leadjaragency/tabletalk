@@ -1,8 +1,5 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-
-import { prisma } from "@/lib/db";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { Wifi, WifiOff } from "lucide-react";
@@ -26,8 +23,11 @@ export default async function AdminLayout({
 
   if (!restaurantId) redirect("/auth/login");
 
+  // Use the schema-aware client (public for CA, de for DE)
+  const db = getPrismaForSession(session);
+
   // ── Restaurant status guard ────────────────────────────────────────────
-  const restaurant = await prisma.restaurant.findUnique({
+  const restaurant = await db.restaurant.findUnique({
     where: { id: restaurantId },
     select: {
       name: true,
@@ -50,7 +50,7 @@ export default async function AdminLayout({
   const pendingOrdersCount = restaurant._count.orders;
 
   // ── Recent pending orders for notification bell ────────────────────────
-  const recentOrdersRaw = await prisma.order.findMany({
+  const recentOrdersRaw = await db.order.findMany({
     where: { restaurantId, status: { in: ["received", "preparing"] } },
     orderBy: { createdAt: "desc" },
     take: 10,

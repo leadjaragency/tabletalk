@@ -1,8 +1,5 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-
-import { prisma } from "@/lib/db";
 import { MenuPageClient } from "@/components/admin/MenuPageClient";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +12,10 @@ export default async function MenuPage() {
   }
 
   const restaurantId = session.user.restaurantId;
+  const db = getPrismaForSession(session);
 
   const [categories, dishes] = await Promise.all([
-    prisma.category.findMany({
+    db.category.findMany({
       where:   { restaurantId },
       orderBy: { sortOrder: "asc" },
       include: {
@@ -26,7 +24,7 @@ export default async function MenuPage() {
         },
       },
     }),
-    prisma.dish.findMany({
+    db.dish.findMany({
       where:   { restaurantId },
       include: { category: { select: { id: true, name: true, sortOrder: true } } },
       orderBy: [

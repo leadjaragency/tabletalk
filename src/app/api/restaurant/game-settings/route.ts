@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getRequiredSession, getRestaurantIdFromSession, getPrismaForSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -26,8 +25,9 @@ export async function GET() {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
-    const restaurant = await prisma.restaurant.findUnique({
+    const restaurant = await db.restaurant.findUnique({
       where:  { id: restaurantId },
       select: { branding: true },
     });
@@ -60,6 +60,7 @@ export async function PUT(req: Request) {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
     const body   = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(body);
@@ -68,13 +69,13 @@ export async function PUT(req: Request) {
     }
 
     // Merge into existing branding JSON
-    const restaurant = await prisma.restaurant.findUnique({
+    const restaurant = await db.restaurant.findUnique({
       where:  { id: restaurantId },
       select: { branding: true },
     });
     const existingBranding = (restaurant?.branding ?? {}) as Record<string, unknown>;
 
-    await prisma.restaurant.update({
+    await db.restaurant.update({
       where: { id: restaurantId },
       data:  {
         branding: {

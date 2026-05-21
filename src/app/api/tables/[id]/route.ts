@@ -1,8 +1,6 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 
 
 export const dynamic = "force-dynamic";
@@ -22,8 +20,9 @@ export async function GET(_req: Request, { params }: Ctx) {
     }
 
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
-    const table = await prisma.table.findUnique({
+    const table = await db.table.findUnique({
       where: { id },
       include: {
         waiter:       { select: { id: true, name: true, avatar: true, personality: true } },
@@ -57,7 +56,7 @@ export async function GET(_req: Request, { params }: Ctx) {
     // Fetch game results for the active session
     const activeSession = table.sessions[0] ?? null;
     const gameResults = activeSession
-      ? await prisma.gameResult.findMany({
+      ? await db.gameResult.findMany({
           where:   { sessionId: activeSession.id, restaurantId },
           orderBy: { createdAt: "asc" },
           select:  {
@@ -97,8 +96,9 @@ export async function PUT(req: Request, { params }: Ctx) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
-    const existing = await prisma.table.findUnique({
+    const existing = await db.table.findUnique({
       where:  { id },
       select: { restaurantId: true },
     });
@@ -117,7 +117,7 @@ export async function PUT(req: Request, { params }: Ctx) {
 
     // If waiterId is being changed, verify the waiter belongs to this restaurant
     if (parsed.data.waiterId !== undefined && parsed.data.waiterId !== null) {
-      const waiter = await prisma.aIWaiter.findUnique({
+      const waiter = await db.aIWaiter.findUnique({
         where:  { id: parsed.data.waiterId },
         select: { restaurantId: true, isActive: true },
       });
@@ -126,7 +126,7 @@ export async function PUT(req: Request, { params }: Ctx) {
       }
     }
 
-    const table = await prisma.table.update({
+    const table = await db.table.update({
       where:   { id },
       data:    parsed.data,
       include: { waiter: { select: { id: true, name: true, avatar: true } } },
@@ -153,8 +153,9 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     if (!session?.user.restaurantId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    const db = getPrismaForSession(session);
 
-    const existing = await prisma.table.findUnique({
+    const existing = await db.table.findUnique({
       where:  { id },
       select: {
         restaurantId: true,
@@ -184,7 +185,7 @@ export async function DELETE(_req: Request, { params }: Ctx) {
       );
     }
 
-    await prisma.table.delete({ where: { id } });
+    await db.table.delete({ where: { id } });
     return NextResponse.json({ deleted: true });
   } catch (error) {
     console.error("[DELETE /api/tables/[id]]", error);

@@ -1,8 +1,8 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession, getRestaurantFromSlug } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
+import type { Country } from "@/types";
 
 
 export const dynamic = "force-dynamic";
@@ -22,6 +22,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
     const { searchParams } = new URL(req.url);
     const statusParam = searchParams.get("status");
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
       ? statusParam.split(",").map((s) => s.trim()).filter(Boolean)
       : undefined;
 
-    const orders = await prisma.order.findMany({
+    const orders = await db.order.findMany({
       where: {
         restaurantId,
         ...(statuses  ? { status:  { in: statuses }  } : {}),
@@ -79,11 +80,12 @@ const OrderItemInputSchema = z.object({
 });
 
 const CreateOrderSchema = z.object({
-  tableId:      z.string().min(1),
-  sessionId:    z.string().min(1),
-  items:        z.array(OrderItemInputSchema).min(1, "At least one item required"),
-  specialNotes: z.string().max(500).optional().nullable(),
-  discount:     z.coerce.number().min(0).optional().default(0),
+  tableId:        z.string().min(1),
+  sessionId:      z.string().min(1),
+  restaurantSlug: z.string().optional(),
+  items:          z.array(OrderItemInputSchema).min(1, "At least one item required"),
+  specialNotes:   z.string().max(500).optional().nullable(),
+  discount:       z.coerce.number().min(0).optional().default(0),
 });
 
 export async function POST(req: Request) {
@@ -99,26 +101,26 @@ export async function POST(req: Request) {
       );
     }
 
-    const { tableId, sessionId, items, specialNotes, discount } = parsed.data;
+    const { tableId, sessionId, restaurantSlug, items, specialNotes, discount } = parsed.data;
 
-    // Resolve restaurantId: from admin session OR via table lookup (customer path)
+    // Resolve restaurantId + db client
     let restaurantId: string;
+    let db: ReturnType<typeof getPrismaClient>;
+
     if (session?.user.restaurantId) {
       restaurantId = session.user.restaurantId;
+      db = getPrismaForSession(session);
+    } else if (restaurantSlug) {
+      // Customer: use slug to find correct schema
+      const restaurant = await getRestaurantFromSlug(restaurantSlug);
+      restaurantId = restaurant.id;
+      db = getPrismaClient(restaurant.country as Country);
     } else {
-      // Customer: look up restaurantId from the table
-      const table = await prisma.table.findUnique({
-        where:  { id: tableId },
-        select: { restaurantId: true },
-      });
-      if (!table) {
-        return NextResponse.json({ error: "Table not found." }, { status: 404 });
-      }
-      restaurantId = table.restaurantId;
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
     // Verify table belongs to restaurant
-    const table = await prisma.table.findUnique({
+    const table = await db.table.findUnique({
       where:  { id: tableId },
       select: { id: true, restaurantId: true, number: true },
     });
@@ -127,7 +129,7 @@ export async function POST(req: Request) {
     }
 
     // Verify session belongs to restaurant + table
-    const tableSession = await prisma.tableSession.findUnique({
+    const tableSession = await db.tableSession.findUnique({
       where:  { id: sessionId },
       select: { id: true, restaurantId: true, tableId: true, endedAt: true },
     });
@@ -141,7 +143,7 @@ export async function POST(req: Request) {
 
     // Fetch all dishes to validate and get prices
     const dishIds = [...new Set(items.map((i) => i.dishId))];
-    const dishes  = await prisma.dish.findMany({
+    const dishes  = await db.dish.findMany({
       where:  { id: { in: dishIds }, restaurantId, isAvailable: true },
       select: { id: true, price: true, name: true },
     });
@@ -156,7 +158,7 @@ export async function POST(req: Request) {
     const dishMap = Object.fromEntries(dishes.map((d) => [d.id, d]));
 
     // Calculate totals
-    const restaurant = await prisma.restaurant.findUnique({
+    const restaurant = await db.restaurant.findUnique({
       where:  { id: restaurantId },
       select: { taxRate: true, slug: true },
     });
@@ -171,11 +173,11 @@ export async function POST(req: Request) {
 
     // Generate order number: SLUG_PREFIX-NNNN (e.g. SP-0007)
     const prefix     = restaurant.slug.split("-").map((w) => w[0].toUpperCase()).join("").slice(0, 3);
-    const orderCount = await prisma.order.count({ where: { restaurantId } });
+    const orderCount = await db.order.count({ where: { restaurantId } });
     const orderNumber = `${prefix}-${String(orderCount + 1).padStart(4, "0")}`;
 
     // Create order + items + update table status in a transaction
-    const order = await prisma.$transaction(async (tx) => {
+    const order = await db.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
           restaurantId,

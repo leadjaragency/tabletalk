@@ -1,7 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient } from "@/lib/db";
+import type { Country } from "@/types";
 
 /**
  * GET /api/customer/info?restaurant=<slug>&table=<number>
@@ -28,26 +30,11 @@ export async function GET(req: Request) {
       );
     }
 
-    // ── Restaurant lookup ────────────────────────────────────────────────
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { slug },
-      select: {
-        id:       true,
-        name:     true,
-        slug:     true,
-        tagline:  true,
-        cuisine:  true,
-        hours:    true,
-        taxRate:  true,
-        currency: true,
-        phone:    true,
-        email:    true,
-        address:  true,
-        status:   true,
-      },
-    });
-
-    if (!restaurant) {
+    // ── Restaurant lookup (searches both CA and DE schemas) ─────────────
+    let restaurant: Awaited<ReturnType<typeof getRestaurantFromSlug>>;
+    try {
+      restaurant = await getRestaurantFromSlug(slug);
+    } catch {
       return NextResponse.json(
         { error: "Restaurant not found." },
         { status: 404 }
@@ -60,8 +47,10 @@ export async function GET(req: Request) {
       );
     }
 
+    const db = getPrismaClient(restaurant.country as Country);
+
     // ── Table lookup (by composite key restaurantId + number) ────────────
-    const table = await prisma.table.findUnique({
+    const table = await db.table.findUnique({
       where: {
         restaurantId_number: {
           restaurantId: restaurant.id,
@@ -98,7 +87,7 @@ export async function GET(req: Request) {
     // ── If this table is merged into another, resolve to the primary ─────
     let effectiveTable = table;
     if (table.mergedIntoId) {
-      const primary = await prisma.table.findUnique({
+      const primary = await db.table.findUnique({
         where:  { id: table.mergedIntoId },
         select: {
           id:     true,
@@ -125,7 +114,7 @@ export async function GET(req: Request) {
 
     // ── Session lock check (against effective / primary table) ───────────
     const sessionId = searchParams.get("sessionId")?.trim() ?? null;
-    const activeSession = await prisma.tableSession.findFirst({
+    const activeSession = await db.tableSession.findFirst({
       where: { tableId: effectiveTable.id, endedAt: null },
       select: { id: true },
     });

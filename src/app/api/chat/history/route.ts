@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma as prismaCA, prismaDE } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +22,20 @@ export async function GET(req: Request) {
       );
     }
 
-    // Validate the TableSession exists
-    const tableSession = await prisma.tableSession.findUnique({
+    // Find the session in whichever schema owns it
+    let tableSession = await prismaCA.tableSession.findUnique({
       where:  { id: sessionId },
       select: { id: true },
     });
+    const db = tableSession ? prismaCA : prismaDE;
+
+    if (!tableSession) {
+      tableSession = await prismaDE.tableSession.findUnique({
+        where:  { id: sessionId },
+        select: { id: true },
+      });
+    }
+
     if (!tableSession) {
       return NextResponse.json(
         { error: "Session not found." },
@@ -35,8 +44,7 @@ export async function GET(req: Request) {
     }
 
     // Find the most recent ChatSession for this TableSession
-    // (there may be multiple if the waiter changed, but we use the latest)
-    const chatSession = await prisma.chatSession.findFirst({
+    const chatSession = await db.chatSession.findFirst({
       where:   { sessionId },
       orderBy: { createdAt: "desc" },
       select: {
@@ -64,7 +72,6 @@ export async function GET(req: Request) {
     });
 
     if (!chatSession) {
-      // No chat has started yet — return empty state
       return NextResponse.json({
         chatSessionId: null,
         waiter:        null,
@@ -78,7 +85,6 @@ export async function GET(req: Request) {
       messages:      chatSession.messages.map((m) => ({
         ...m,
         createdAt: m.createdAt.toISOString(),
-        // Safely extract quickReplies from metadata Json
         quickReplies: extractQuickReplies(m.metadata),
       })),
     });

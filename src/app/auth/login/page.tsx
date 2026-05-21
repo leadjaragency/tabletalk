@@ -10,6 +10,7 @@ import Link from "next/link";
 import { ArrowLeft, Utensils, QrCode, TrendingUp, Star } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import { TopLoadingBar } from "@/components/ui/TopLoadingBar";
+import { useTranslations } from "next-intl";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -48,6 +49,7 @@ function LoginBanners() {
 export default function LoginPage() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const t = useTranslations("auth.login");
 
   const {
     register,
@@ -230,10 +232,10 @@ export default function LoginPage() {
                   color: "#1B2A4A",
                 }}
               >
-                Welcome Back
+                {t("title")}
               </h2>
               <p className="text-sm" style={{ color: "#8B7355" }}>
-                Sign in to your ServeMyTable dashboard
+                {t("subtitle")}
               </p>
             </div>
 
@@ -253,7 +255,7 @@ export default function LoginPage() {
                 {/* Email */}
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#1B2A4A" }}>
-                    Email address
+                    {t("emailLabel")}
                   </label>
                   <input
                     type="email"
@@ -272,7 +274,7 @@ export default function LoginPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-semibold uppercase tracking-wider" style={{ color: "#1B2A4A" }}>
-                      Password
+                      {t("passwordLabel")}
                     </label>
                     <Link
                       href="/auth/forgot-password"
@@ -281,7 +283,7 @@ export default function LoginPage() {
                       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#A8873A")}
                       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#C6A34E")}
                     >
-                      Forgot password?
+                      {t("forgotPassword")}
                     </Link>
                   </div>
                   <input
@@ -319,7 +321,7 @@ export default function LoginPage() {
                   onMouseEnter={(e) => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.background = "#A8873A"; }}
                   onMouseLeave={(e) => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.background = "#C6A34E"; }}
                 >
-                  {isSubmitting ? "Signing in…" : "Sign in"}
+                  {isSubmitting ? "…" : t("submitButton")}
                 </button>
               </form>
 

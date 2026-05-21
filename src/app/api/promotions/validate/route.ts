@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient } from "@/lib/db";
+import type { Country } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -29,18 +31,19 @@ export async function POST(req: Request) {
 
     const { restaurantSlug, code, subtotal } = parsed.data;
 
-    // Resolve restaurant
-    const restaurant = await prisma.restaurant.findUnique({
-      where:  { slug: restaurantSlug, status: "active" },
-      select: { id: true },
-    });
-    if (!restaurant) {
+    // Resolve restaurant (searches both schemas)
+    let restaurant: Awaited<ReturnType<typeof getRestaurantFromSlug>>;
+    try {
+      restaurant = await getRestaurantFromSlug(restaurantSlug);
+    } catch {
       return NextResponse.json({ valid: false, message: "Restaurant not found." }, { status: 404 });
     }
 
+    const db = getPrismaClient(restaurant.country as Country);
+
     // Find matching active promotion (title as code, case-insensitive)
     const now = new Date();
-    const promotions = await prisma.promotion.findMany({
+    const promotions = await db.promotion.findMany({
       where: {
         restaurantId: restaurant.id,
         isActive:     true,

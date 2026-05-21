@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient } from "@/lib/db";
 import { streamChat, estimateCost } from "@/lib/anthropic";
 import { buildWaiterPrompt, parseAIResponse, type PromptCartItem } from "@/lib/ai-waiter-prompt";
+import type { Country } from "@/types";
 
 // Node.js runtime required — Anthropic SDK streaming depends on it
 export const runtime = "nodejs";
@@ -63,20 +65,19 @@ export async function POST(req: Request) {
 
   const { messages, tableNumber, sessionId, restaurantSlug, currentCart, isInit } = parsed.data;
 
-  // ── Restaurant ────────────────────────────────────────────────────────
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { slug: restaurantSlug, status: "active" },
-    select: {
-      id: true, name: true, slug: true, cuisine: true, tagline: true,
-      phone: true, address: true, hours: true, taxRate: true, currency: true,
-    },
-  });
-  if (!restaurant) {
+  // ── Restaurant — searches public (CA) then de (DE) schemas ──────────
+  let restaurant: Awaited<ReturnType<typeof getRestaurantFromSlug>>;
+  try {
+    restaurant = await getRestaurantFromSlug(restaurantSlug);
+  } catch {
     return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
   }
 
+  // Schema-aware client: all subsequent queries use the restaurant's schema
+  const db = getPrismaClient(restaurant.country as Country);
+
   // ── Table + assigned waiter ───────────────────────────────────────────
-  const table = await prisma.table.findUnique({
+  const table = await db.table.findUnique({
     where: { restaurantId_number: { restaurantId: restaurant.id, number: tableNumber } },
     select: {
       id: true, number: true, seats: true,
@@ -95,7 +96,7 @@ export async function POST(req: Request) {
   // Fall back to first active waiter if table has none assigned
   let waiter = table.waiter;
   if (!waiter) {
-    waiter = await prisma.aIWaiter.findFirst({
+    waiter = await db.aIWaiter.findFirst({
       where:  { restaurantId: restaurant.id, isActive: true },
       select: {
         id: true, name: true, avatar: true,
@@ -108,7 +109,7 @@ export async function POST(req: Request) {
   }
 
   // ── Table session ─────────────────────────────────────────────────────
-  const tableSession = await prisma.tableSession.findUnique({
+  const tableSession = await db.tableSession.findUnique({
     where:  { id: sessionId },
     select: { id: true, dietaryPrefs: true, gamePlayUsed: true, discount: true },
   });
@@ -117,7 +118,7 @@ export async function POST(req: Request) {
   }
 
   // ── Menu ──────────────────────────────────────────────────────────────
-  const menu = await prisma.dish.findMany({
+  const menu = await db.dish.findMany({
     where:   { restaurantId: restaurant.id, isAvailable: true },
     include: { category: { select: { name: true, sortOrder: true } } },
     orderBy: [{ category: { sortOrder: "asc" } }, { name: "asc" }],
@@ -125,7 +126,7 @@ export async function POST(req: Request) {
 
   // ── Active promotions ─────────────────────────────────────────────────
   const now = new Date();
-  const activePromotions = await prisma.promotion.findMany({
+  const activePromotions = await db.promotion.findMany({
     where: {
       restaurantId: restaurant.id,
       isActive:     true,
@@ -136,12 +137,12 @@ export async function POST(req: Request) {
   });
 
   // ── Find or create ChatSession ────────────────────────────────────────
-  let chatSession = await prisma.chatSession.findFirst({
+  let chatSession = await db.chatSession.findFirst({
     where:  { sessionId, waiterId: waiter.id },
     select: { id: true },
   });
   if (!chatSession) {
-    chatSession = await prisma.chatSession.create({
+    chatSession = await db.chatSession.create({
       data:   { sessionId, waiterId: waiter.id },
       select: { id: true },
     });
@@ -168,12 +169,13 @@ export async function POST(req: Request) {
     },
     currentCart:      cart,
     activePromotions,
+    preferredLanguage: restaurant.country === "DE" ? "de" : "en",
   });
 
   // ── Persist user message (skip for greeting init) ────────────────────
   const latestUserMsg = messages[messages.length - 1];
   if (!isInit) {
-    await prisma.chatMessage.create({
+    await db.chatMessage.create({
       data: {
         chatSessionId: chatSession.id,
         role:          "user",
@@ -220,7 +222,7 @@ export async function POST(req: Request) {
         const { cleanText, quickReplies } = parseAIResponse(fullText);
 
         // Save assistant message
-        const assistantMsg = await prisma.chatMessage.create({
+        const assistantMsg = await db.chatMessage.create({
           data: {
             chatSessionId: chatSession.id,
             role:          "assistant",
@@ -231,7 +233,7 @@ export async function POST(req: Request) {
         });
 
         // Log API usage
-        await prisma.aPIUsageLog.create({
+        await db.aPIUsageLog.create({
           data: {
             restaurantId: restaurant.id,
             endpoint:     "chat",

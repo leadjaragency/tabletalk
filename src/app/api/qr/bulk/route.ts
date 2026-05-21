@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getRequiredSession, getRestaurantIdFromSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getRequiredSession, getRestaurantIdFromSession, getPrismaForSession } from "@/lib/auth";
 import { generateTableQR } from "@/lib/qr-generator";
 import { jsPDF } from "jspdf";
 
@@ -24,13 +23,14 @@ export async function POST(req: Request) {
     const session = await getRequiredSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const restaurantId = getRestaurantIdFromSession(session);
+    const db = getPrismaForSession(session);
 
     const [restaurant, tables] = await Promise.all([
-      prisma.restaurant.findUnique({
+      db.restaurant.findUnique({
         where:  { id: restaurantId },
         select: { name: true, slug: true },
       }),
-      prisma.table.findMany({
+      db.table.findMany({
         where:   { restaurantId },
         orderBy: { number: "asc" },
         select:  { id: true, number: true },

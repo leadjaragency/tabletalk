@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useCustomer } from "@/lib/CustomerContext";
 import { Loader2, Utensils } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function TableSplashPage() {
   const router         = useRouter();
@@ -12,6 +13,7 @@ export default function TableSplashPage() {
   const restaurantSlug = searchParams.get("restaurant") ?? "";
 
   const { restaurant, table, waiter, loading, error, setSessionId } = useCustomer();
+  const t = useTranslations("customer");
 
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
 
@@ -58,7 +60,7 @@ export default function TableSplashPage() {
           <Utensils className="h-8 w-8 text-red-500" />
         </div>
         <div>
-          <p className="font-display text-xl font-bold text-cu-text">Table not found</p>
+          <p className="font-display text-xl font-bold text-cu-text">{t("errors.tableNotFound" as any)}</p>
           <p className="mt-2 text-sm text-cu-text/60">
             {error ?? "Please scan the QR code on your table again."}
           </p>
@@ -96,7 +98,7 @@ export default function TableSplashPage() {
 
       {/* Table number pill */}
       <div className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-semibold text-white backdrop-blur-sm">
-        Table {table.number} · {table.seats} seats
+        {t("splash.table", { number: table.number })} · {table.seats} {t("admin.tables.seats", { count: table.seats } as any)}
       </div>
 
       {/* AI waiter card */}
@@ -105,7 +107,7 @@ export default function TableSplashPage() {
           <span className="text-3xl leading-none">{waiter.avatar}</span>
           <div className="text-left">
             <p className="text-xs font-medium uppercase tracking-wider text-white/50">
-              Your AI waiter today
+              {t("splash.loading")}
             </p>
             <p className="text-base font-semibold text-white">{waiter.name}</p>
             <p className="text-xs text-white/60 capitalize">{waiter.personality}</p>

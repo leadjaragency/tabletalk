@@ -7,6 +7,7 @@ import {
   ArrowLeft, AlertTriangle, CheckCircle2, MessageCircle,
   StickyNote, Tag, X, Loader2,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCartStore, selectSubtotal } from "@/lib/store";
 import { useCustomer } from "@/lib/CustomerContext";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -30,16 +31,15 @@ interface PromoResult {
 
 function EmptyCart({ tableId, slug }: { tableId: string; slug: string }) {
   const router = useRouter();
+  const t = useTranslations("customer.cart");
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 bg-cu-bg">
       <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-cu-accent/10">
         <ShoppingCart className="h-10 w-10 text-cu-accent" />
       </div>
       <div className="text-center">
-        <p className="font-display text-xl font-semibold text-cu-text">Your cart is empty</p>
-        <p className="mt-1 text-sm text-cu-text/60">
-          Add dishes from the menu and they will appear here.
-        </p>
+        <p className="font-display text-xl font-semibold text-cu-text">{t("empty")}</p>
+        <p className="mt-1 text-sm text-cu-text/60">{t("emptySubtitle")}</p>
       </div>
       <button
         onClick={() =>
@@ -47,7 +47,7 @@ function EmptyCart({ tableId, slug }: { tableId: string; slug: string }) {
         }
         className="flex items-center gap-2 rounded-2xl bg-cu-accent px-6 py-3 text-sm font-semibold text-white shadow-md active:scale-95 transition-transform"
       >
-        Browse Menu
+        {t("browseMenu")}
       </button>
     </div>
   );
@@ -346,6 +346,7 @@ function PromoSection({ restaurantSlug, subtotal, applied, onApply, onRemove }: 
 // ---------------------------------------------------------------------------
 
 export default function CartPage() {
+  const t          = useTranslations("customer.cart");
   const params       = useParams<{ tableId: string }>();
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -399,8 +400,9 @@ export default function CartPage() {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tableId:      table.id,
+          tableId:        table.id,
           sessionId,
+          restaurantSlug: restaurant?.slug ?? restaurantSlug,
           items: items.map((i) => ({
             dishId:      i.dishId,
             quantity:    i.quantity,
@@ -461,7 +463,7 @@ export default function CartPage() {
             <ArrowLeft className="h-5 w-5 text-cu-text" />
           </button>
           <div className="flex-1">
-            <h1 className="font-display text-lg font-bold text-cu-text leading-tight">Your Cart</h1>
+            <h1 className="font-display text-lg font-bold text-cu-text leading-tight">{t("title")}</h1>
             {restaurant && (
               <p className="text-xs text-cu-text/50 leading-none mt-0.5">{restaurant.name}</p>
             )}
@@ -528,17 +530,17 @@ export default function CartPage() {
 
         {/* Pricing summary */}
         <div className="rounded-2xl bg-white border border-cu-border shadow-sm p-4 space-y-2.5">
-          <p className="text-sm font-semibold text-cu-text">Order summary</p>
+          <p className="text-sm font-semibold text-cu-text">{t("orderSummary")}</p>
 
           <div className="flex justify-between text-sm">
-            <span className="text-cu-text/60">Subtotal</span>
+            <span className="text-cu-text/60">{t("subtotal")}</span>
             <span className="text-cu-text font-medium tabular-nums">
               {formatCurrency(subtotal, currency)}
             </span>
           </div>
 
           <div className="flex justify-between text-sm">
-            <span className="text-cu-text/60">Tax ({(taxRate * 100).toFixed(0)}%)</span>
+            <span className="text-cu-text/60">{t("tax")} ({(taxRate * 100).toFixed(0)}%)</span>
             <span className="text-cu-text font-medium tabular-nums">
               {formatCurrency(taxAmount, currency)}
             </span>
@@ -568,7 +570,7 @@ export default function CartPage() {
           <div className="h-px bg-cu-border" />
 
           <div className="flex justify-between items-baseline">
-            <span className="font-semibold text-cu-text">Total</span>
+            <span className="font-semibold text-cu-text">{t("total")}</span>
             <span className="font-bold text-cu-accent text-lg tabular-nums">
               {formatCurrency(total, currency)}
             </span>
@@ -627,12 +629,12 @@ export default function CartPage() {
             {placing ? (
               <>
                 <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                Placing order…
+                {t("placing")}
               </>
             ) : (
               <>
                 <ShoppingCart className="h-5 w-5" />
-                Place Order · {formatCurrency(total, currency)}
+                {t("placeOrder")} · {formatCurrency(total, currency)}
               </>
             )}
           </button>

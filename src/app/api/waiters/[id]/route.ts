@@ -1,8 +1,6 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 
 
 export const dynamic = "force-dynamic";
@@ -20,8 +18,9 @@ export async function GET(_req: Request, { params }: Ctx) {
     if (!session?.user.restaurantId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    const db = getPrismaForSession(session);
 
-    const waiter = await prisma.aIWaiter.findUnique({
+    const waiter = await db.aIWaiter.findUnique({
       where: { id },
       include: {
         tables:      { select: { id: true, number: true, status: true }, orderBy: { number: "asc" } },
@@ -63,8 +62,9 @@ export async function PUT(req: Request, { params }: Ctx) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
-    const existing = await prisma.aIWaiter.findUnique({
+    const existing = await db.aIWaiter.findUnique({
       where:  { id },
       select: { restaurantId: true },
     });
@@ -85,7 +85,7 @@ export async function PUT(req: Request, { params }: Ctx) {
 
     // Validate table ownership
     if (tableIds !== undefined && tableIds.length > 0) {
-      const tables = await prisma.table.findMany({
+      const tables = await db.table.findMany({
         where:  { id: { in: tableIds }, restaurantId },
         select: { id: true },
       });
@@ -95,7 +95,7 @@ export async function PUT(req: Request, { params }: Ctx) {
     }
 
     // Build the update — if tableIds provided, replace the entire table assignment set
-    const waiter = await prisma.aIWaiter.update({
+    const waiter = await db.aIWaiter.update({
       where: { id },
       data:  {
         ...waiterData,
@@ -127,8 +127,9 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     if (!session?.user.restaurantId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    const db = getPrismaForSession(session);
 
-    const existing = await prisma.aIWaiter.findUnique({
+    const existing = await db.aIWaiter.findUnique({
       where:  { id },
       select: {
         restaurantId: true,
@@ -141,21 +142,21 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     }
 
     // Unlink from all tables first, then delete (or soft-delete if has history)
-    await prisma.table.updateMany({
+    await db.table.updateMany({
       where: { waiterId: id },
       data:  { waiterId: null },
     });
 
     if (existing._count.chatSessions > 0) {
       // Soft-delete: deactivate waiter to preserve chat history
-      await prisma.aIWaiter.update({
+      await db.aIWaiter.update({
         where: { id },
         data:  { isActive: false },
       });
       return NextResponse.json({ deleted: false, message: "Waiter deactivated (has conversation history)." });
     }
 
-    await prisma.aIWaiter.delete({ where: { id } });
+    await db.aIWaiter.delete({ where: { id } });
     return NextResponse.json({ deleted: true });
   } catch (error) {
     console.error("[DELETE /api/waiters/[id]]", error);

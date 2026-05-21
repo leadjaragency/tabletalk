@@ -1,30 +1,33 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession, getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient } from "@/lib/db";
 import { NextResponse } from "next/server";
-
+import type { Country } from "@/types";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 
 
 export const dynamic = "force-dynamic";
 
 // ---------------------------------------------------------------------------
-// Shared resolver — admin session OR public slug param
+// Resolve restaurant context — admin session OR public slug param
+// Returns { restaurantId, db } or null
 // ---------------------------------------------------------------------------
 
-async function resolveRestaurantId(req: Request): Promise<string | null> {
+async function resolveRestaurantContext(req: Request) {
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get("restaurantSlug");
 
   if (slug) {
-    const restaurant = await prisma.restaurant.findFirst({
-      where: { slug, status: "active" },
-      select: { id: true },
-    });
-    return restaurant?.id ?? null;
+    try {
+      const restaurant = await getRestaurantFromSlug(slug);
+      return { restaurantId: restaurant.id, db: getPrismaClient(restaurant.country as Country) };
+    } catch {
+      return null;
+    }
   }
 
   const session = await getRequiredSession();
-  return session?.user.restaurantId ?? null;
+  if (!session?.user.restaurantId) return null;
+  return { restaurantId: session.user.restaurantId, db: getPrismaForSession(session) };
 }
 
 // ---------------------------------------------------------------------------
@@ -33,15 +36,16 @@ async function resolveRestaurantId(req: Request): Promise<string | null> {
 
 export async function GET(req: Request) {
   try {
-    const restaurantId = await resolveRestaurantId(req);
-    if (!restaurantId) {
+    const ctx = await resolveRestaurantContext(req);
+    if (!ctx) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    const { restaurantId, db } = ctx;
 
     const { searchParams } = new URL(req.url);
     const onlyAvailable = searchParams.get("available") === "true";
 
-    const dishes = await prisma.dish.findMany({
+    const dishes = await db.dish.findMany({
       where:   {
         restaurantId,
         ...(onlyAvailable ? { isAvailable: true } : {}),
@@ -90,6 +94,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
     const body   = await req.json();
     const parsed = DishSchema.safeParse(body);
@@ -101,7 +106,7 @@ export async function POST(req: Request) {
     }
 
     // Verify the category belongs to this restaurant
-    const category = await prisma.category.findUnique({
+    const category = await db.category.findUnique({
       where:  { id: parsed.data.categoryId },
       select: { restaurantId: true },
     });
@@ -109,7 +114,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid category." }, { status: 400 });
     }
 
-    const dish = await prisma.dish.create({
+    const dish = await db.dish.create({
       data: { restaurantId, ...parsed.data },
       include: { category: { select: { id: true, name: true, sortOrder: true } } },
     });

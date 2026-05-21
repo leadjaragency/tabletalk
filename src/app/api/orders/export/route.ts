@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getRequiredSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 
 function esc(val: string | number | null | undefined): string {
   if (val == null) return "";
@@ -20,6 +19,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
     const { searchParams } = new URL(req.url);
     const fromParam = searchParams.get("from");
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     const toDate = toParam ? new Date(toParam) : new Date();
     toDate.setHours(23, 59, 59, 999);
 
-    const orders = await prisma.order.findMany({
+    const orders = await db.order.findMany({
       where: {
         restaurantId,
         createdAt: { gte: fromDate, lte: toDate },

@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { z } from "zod";
 
 const MergeSchema = z.object({
@@ -28,6 +27,7 @@ export async function POST(req: Request) {
 
     const restaurantId = session.user.restaurantId;
     if (!restaurantId) return NextResponse.json({ error: "No restaurant." }, { status: 403 });
+    const db = getPrismaForSession(session);
 
     const body  = await req.json();
     const parsed = MergeSchema.safeParse(body);
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const allIds = [primaryTableId, ...secondaryTableIds];
 
     // Fetch all tables in one query
-    const tables = await prisma.table.findMany({
+    const tables = await db.table.findMany({
       where: { id: { in: allIds }, restaurantId },
       select: {
         id:           true,
@@ -101,12 +101,12 @@ export async function POST(req: Request) {
     }
 
     // Set mergedIntoId on all secondary tables
-    await prisma.table.updateMany({
+    await db.table.updateMany({
       where: { id: { in: secondaryTableIds }, restaurantId },
       data:  { mergedIntoId: primaryTableId },
     });
 
-    const updated = await prisma.table.findMany({
+    const updated = await db.table.findMany({
       where:   { id: { in: allIds } },
       select:  { id: true, number: true, status: true, mergedIntoId: true },
       orderBy: { number: "asc" },
@@ -131,6 +131,7 @@ export async function DELETE(req: Request) {
 
     const restaurantId = session.user.restaurantId;
     if (!restaurantId) return NextResponse.json({ error: "No restaurant." }, { status: 403 });
+    const db = getPrismaForSession(session);
 
     const body   = await req.json();
     const parsed = UnmergeSchema.safeParse(body);
@@ -144,7 +145,7 @@ export async function DELETE(req: Request) {
     const { primaryTableId, force } = parsed.data;
 
     // Fetch primary + all its merged children
-    const primary = await prisma.table.findUnique({
+    const primary = await db.table.findUnique({
       where:  { id: primaryTableId, restaurantId },
       select: {
         id:          true,
@@ -177,7 +178,7 @@ export async function DELETE(req: Request) {
 
     const secondaryIds = primary.mergedTables.map((t) => t.id);
 
-    await prisma.table.updateMany({
+    await db.table.updateMany({
       where: { id: { in: secondaryIds }, restaurantId },
       data:  { mergedIntoId: null },
     });

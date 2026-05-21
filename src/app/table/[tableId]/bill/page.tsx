@@ -6,6 +6,7 @@ import {
   ClipboardList, ChevronDown, ChevronUp, Loader2,
   CheckCircle2, Users, CreditCard, Smartphone,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCustomer } from "@/lib/CustomerContext";
 import { formatCurrency, cn } from "@/lib/utils";
 
@@ -47,6 +48,7 @@ const TIP_PRESETS = [
 // ---------------------------------------------------------------------------
 
 export default function OrderPage() {
+  const t              = useTranslations("customer.bill");
   const params         = useParams<{ tableId: string }>();
   const searchParams   = useSearchParams();
   const router         = useRouter();
@@ -139,8 +141,8 @@ export default function OrderPage() {
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-cu-green/10">
           <CheckCircle2 className="h-10 w-10 text-cu-green" />
         </div>
-        <p className="font-display text-2xl font-bold text-cu-text">Payment Successful!</p>
-        <p className="text-cu-text/60 text-sm">Redirecting you to leave a review…</p>
+        <p className="font-display text-2xl font-bold text-cu-text">{t("paymentSuccess")}</p>
+        <p className="text-cu-text/60 text-sm">{t("redirectingReview")}</p>
       </div>
     );
   }
@@ -169,8 +171,8 @@ export default function OrderPage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-cu-bg px-6 text-center">
         <ClipboardList className="h-12 w-12 text-cu-accent/30" />
-        <p className="font-display text-xl font-semibold text-cu-text">No orders yet</p>
-        <p className="text-sm text-cu-text/50">Your order details will appear here once you place an order.</p>
+        <p className="font-display text-xl font-semibold text-cu-text">{t("noOrders")}</p>
+        <p className="text-sm text-cu-text/50">{t("noOrdersSubtitle")}</p>
       </div>
     );
   }
@@ -179,7 +181,7 @@ export default function OrderPage() {
     <div className="min-h-dvh bg-cu-bg pb-44">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-cu-border bg-white/95 px-4 py-3 backdrop-blur-sm">
-        <h1 className="font-display text-lg font-bold text-cu-text text-center">Your Order</h1>
+        <h1 className="font-display text-lg font-bold text-cu-text text-center">{t("title")}</h1>
         {restaurant && (
           <p className="text-center text-xs text-cu-text/40 mt-0.5">{restaurant.name}</p>
         )}
@@ -229,12 +231,12 @@ export default function OrderPage() {
         <div className="rounded-2xl border border-cu-border bg-white overflow-hidden">
           <div className="divide-y divide-cu-border/50 px-4">
             <div className="flex justify-between py-3 text-sm">
-              <span className="text-cu-text/60">Subtotal</span>
-              <span className="text-cu-text">{formatCurrency(subtotal)}</span>
+              <span className="text-cu-text/60">{t("subtotal")}</span>
+              <span className="text-cu-text">{formatCurrency(subtotal, restaurant?.currency)}</span>
             </div>
             <div className="flex justify-between py-3 text-sm">
-              <span className="text-cu-text/60">Tax ({(taxRate * 100).toFixed(0)}%)</span>
-              <span className="text-cu-text">{formatCurrency(tax)}</span>
+              <span className="text-cu-text/60">{t("tax")} ({(taxRate * 100).toFixed(0)}%)</span>
+              <span className="text-cu-text">{formatCurrency(tax, restaurant?.currency)}</span>
             </div>
             {gameDiscount > 0 && (
               <div className="flex justify-between py-3 text-sm">
@@ -245,21 +247,21 @@ export default function OrderPage() {
               </div>
             )}
             <div className="flex justify-between py-3 text-sm">
-              <span className="text-cu-text/60">Tip</span>
-              <span className="text-cu-text">{formatCurrency(effectiveTip)}</span>
+              <span className="text-cu-text/60">{t("tip")}</span>
+              <span className="text-cu-text">{formatCurrency(effectiveTip, restaurant?.currency)}</span>
             </div>
           </div>
           <div className="flex items-center justify-between bg-cu-accent/5 px-4 py-4">
-            <span className="font-bold text-cu-text text-base">Total</span>
+            <span className="font-bold text-cu-text text-base">{t("total")}</span>
             <span className="font-display text-2xl font-bold text-cu-accent">
-              {formatCurrency(grandTotal)}
+              {formatCurrency(grandTotal, restaurant?.currency)}
             </span>
           </div>
         </div>
 
         {/* Tip selector */}
         <div className="rounded-2xl border border-cu-border bg-white p-4">
-          <p className="text-sm font-medium text-cu-text mb-3">Add a Tip</p>
+          <p className="text-sm font-medium text-cu-text mb-3">{t("addTip")}</p>
           <div className="grid grid-cols-4 gap-2">
             {TIP_PRESETS.map((tp) => (
               <button
@@ -340,7 +342,7 @@ export default function OrderPage() {
             {paying && payMode === "online" ? (
               <><Loader2 className="h-5 w-5 animate-spin" />Processing…</>
             ) : (
-              <><Smartphone className="h-5 w-5" />Pay Online</>
+              <><Smartphone className="h-5 w-5" />{t("payOnline")}</>
             )}
           </button>
 
@@ -351,13 +353,13 @@ export default function OrderPage() {
             className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-cu-accent bg-white py-3.5 text-base font-bold text-cu-accent active:scale-[0.98] transition-transform disabled:opacity-60"
           >
             {cardLoading ? (
-              <><Loader2 className="h-5 w-5 animate-spin" />Notifying…</>
+              <><Loader2 className="h-5 w-5 animate-spin" />{t("notifying")}</>
             ) : (
-              <><CreditCard className="h-5 w-5" />Call for Card Machine</>
+              <><CreditCard className="h-5 w-5" />{t("callCardMachine")}</>
             )}
           </button>
           <p className="text-center text-[11px] text-cu-text/40">
-            Card machine option brings a representative to your table
+            {t("cardMachineNote")}
           </p>
         </div>
       </div>

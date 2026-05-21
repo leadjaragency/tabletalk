@@ -1,8 +1,6 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-
-import { prisma } from "@/lib/db";
+import { getTranslations } from "next-intl/server";
 import { AutoRefresh } from "@/components/admin/AutoRefresh";
 import {
   LayoutGrid,
@@ -13,7 +11,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { formatDate } from "@/lib/utils";
+import type { PrismaClient } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +19,7 @@ export const dynamic = "force-dynamic";
 // Data fetching
 // ---------------------------------------------------------------------------
 
-async function getData(restaurantId: string) {
+async function getData(restaurantId: string, db: PrismaClient) {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -33,26 +31,26 @@ async function getData(restaurantId: string) {
     aiWaiters,
   ] = await Promise.all([
     // All tables + occupancy
-    prisma.table.findMany({
+    db.table.findMany({
       where: { restaurantId },
       select: { id: true, number: true, status: true, seats: true, waiterId: true },
       orderBy: { number: "asc" },
     }),
 
     // Orders placed today
-    prisma.order.findMany({
+    db.order.findMany({
       where: { restaurantId, createdAt: { gte: todayStart } },
       select: { id: true, status: true, total: true, createdAt: true },
     }),
 
     // Revenue total today
-    prisma.order.aggregate({
+    db.order.aggregate({
       where: { restaurantId, createdAt: { gte: todayStart } },
       _sum: { total: true },
     }),
 
     // Latest 5 non-served orders (received + preparing) with items
-    prisma.order.findMany({
+    db.order.findMany({
       where: {
         restaurantId,
         status: { in: ["received", "preparing", "ready"] },
@@ -68,7 +66,7 @@ async function getData(restaurantId: string) {
     }),
 
     // AI waiters with table + chat session counts
-    prisma.aIWaiter.findMany({
+    db.aIWaiter.findMany({
       where: { restaurantId },
       include: {
         _count: {
@@ -254,6 +252,9 @@ export default async function AdminDashboardPage() {
   const session = await getRequiredSession();
   if (!session?.user.restaurantId) redirect("/auth/login");
 
+  const db = getPrismaForSession(session);
+  const t  = await getTranslations("admin.dashboard");
+
   const {
     activeTables,
     totalTables,
@@ -262,7 +263,7 @@ export default async function AdminDashboardPage() {
     avgWaitMinutes,
     activeOrders,
     aiWaiters,
-  } = await getData(session.user.restaurantId);
+  } = await getData(session.user.restaurantId, db);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
@@ -280,28 +281,28 @@ export default async function AdminDashboardPage() {
       {/* ── Stat cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
-          label="Active Tables"
+          label={t("activeTables")}
           value={`${activeTables}/${totalTables}`}
           sub={`${totalTables - activeTables} empty`}
           icon={LayoutGrid}
           accent="bg-ra-accent/15 text-ra-accent"
         />
         <StatCard
-          label="Orders Today"
+          label={t("ordersToday")}
           value={totalOrdersToday}
           sub={`${activeOrders.length} in progress`}
           icon={ShoppingBag}
           accent="bg-blue-500/15 text-blue-400"
         />
         <StatCard
-          label="Revenue Today"
+          label={t("revenueToday")}
           value={`$${revenueToday.toFixed(2)}`}
           sub="all completed orders"
           icon={DollarSign}
           accent="bg-emerald-500/15 text-emerald-400"
         />
         <StatCard
-          label="Avg Wait Time"
+          label={t("avgWaitTime")}
           value={avgWaitMinutes > 0 ? `${avgWaitMinutes}m` : "—"}
           sub={avgWaitMinutes > 0 ? "for in-progress orders" : "no active orders"}
           icon={Clock}

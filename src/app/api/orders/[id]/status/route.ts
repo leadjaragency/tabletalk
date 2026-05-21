@@ -1,8 +1,7 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 
 
 export const dynamic = "force-dynamic";
@@ -29,8 +28,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const restaurantId = session.user.restaurantId;
+    const db = getPrismaForSession(session);
 
-    const existing = await prisma.order.findUnique({
+    const existing = await db.order.findUnique({
       where:  { id },
       select: { restaurantId: true, status: true, tableId: true },
     });
@@ -60,7 +60,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     }
 
     // When order is served, update the table status to "billing" (ready for payment)
-    const updatedOrder = await prisma.$transaction(async (tx) => {
+    const updatedOrder = await db.$transaction(async (tx) => {
       const order = await tx.order.update({
         where: { id },
         data:  { status: newStatus },

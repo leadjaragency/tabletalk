@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient } from "@/lib/db";
+import type { Country } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -25,16 +27,17 @@ export async function POST(req: Request) {
     const { sessionId, restaurantSlug } = parsed.data;
 
     // Resolve restaurant
-    const restaurant = await prisma.restaurant.findFirst({
-      where:  { slug: restaurantSlug, status: "active" },
-      select: { id: true },
-    });
-    if (!restaurant) {
+    let restaurant: Awaited<ReturnType<typeof getRestaurantFromSlug>>;
+    try {
+      restaurant = await getRestaurantFromSlug(restaurantSlug);
+    } catch {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
     }
 
+    const db = getPrismaClient(restaurant.country as Country);
+
     // Resolve session → tableId
-    const session = await prisma.tableSession.findUnique({
+    const session = await db.tableSession.findUnique({
       where:  { id: sessionId },
       select: { id: true, restaurantId: true, tableId: true, endedAt: true },
     });
@@ -46,7 +49,7 @@ export async function POST(req: Request) {
     }
 
     // Set table status to "billing" — flags it on admin floor plan
-    await prisma.table.update({
+    await db.table.update({
       where: { id: session.tableId },
       data:  { status: "billing" },
     });

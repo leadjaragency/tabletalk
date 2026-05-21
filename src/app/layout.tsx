@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Montserrat, JetBrains_Mono, Inter } from "next/font/google";
 import { MotionConfig } from "framer-motion";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getLocale } from "next-intl/server";
 import "./globals.css";
 
 const bebasNeue = Bebas_Neue({
@@ -57,17 +59,22 @@ export const viewport: Viewport = {
   themeColor: "#1B2A4A",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={`${bebasNeue.variable} ${montserrat.variable} ${jetbrainsMono.variable} ${inter.variable} font-sans antialiased`}>
-        <MotionConfig reducedMotion="user">
-          {children}
-        </MotionConfig>
+        <NextIntlClientProvider messages={messages} locale={locale}>
+          <MotionConfig reducedMotion="user">
+            {children}
+          </MotionConfig>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

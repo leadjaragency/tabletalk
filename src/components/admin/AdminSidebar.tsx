@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   LayoutGrid,
@@ -29,8 +30,10 @@ import {
 // Nav item definition
 // ---------------------------------------------------------------------------
 
+type NavKey = "dashboard" | "tables" | "menu" | "orders" | "waiters" | "qrCodes" | "promotions" | "analytics" | "pos" | "team" | "settings";
+
 interface NavItem {
-  label: string;
+  key: NavKey;
   href: string;
   icon: React.ElementType;
   exact?: boolean;
@@ -39,17 +42,17 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard",    href: "/admin",             icon: LayoutDashboard, exact: true },
-  { label: "Floor Plan",   href: "/admin/tables",      icon: LayoutGrid },
-  { label: "Menu Manager", href: "/admin/menu",        icon: UtensilsCrossed },
-  { label: "Live Orders",  href: "/admin/orders",      icon: ShoppingBag, hasBadge: true },
-  { label: "AI Waiters",   href: "/admin/waiters",     icon: Bot },
-  { label: "QR Codes",     href: "/admin/qr-codes",    icon: QrCode },
-  { label: "Promotions",   href: "/admin/promotions",  icon: Tag },
-  { label: "Analytics",    href: "/admin/analytics",   icon: TrendingUp },
-  { label: "POS",          href: "/admin/pos",         icon: Plug },
-  { label: "Team",         href: "/admin/team",        icon: Users, ownerOnly: true },
-  { label: "Settings",     href: "/admin/settings",    icon: Settings },
+  { key: "dashboard",  href: "/admin",             icon: LayoutDashboard, exact: true },
+  { key: "tables",     href: "/admin/tables",      icon: LayoutGrid },
+  { key: "menu",       href: "/admin/menu",        icon: UtensilsCrossed },
+  { key: "orders",     href: "/admin/orders",      icon: ShoppingBag, hasBadge: true },
+  { key: "waiters",    href: "/admin/waiters",     icon: Bot },
+  { key: "qrCodes",    href: "/admin/qr-codes",    icon: QrCode },
+  { key: "promotions", href: "/admin/promotions",  icon: Tag },
+  { key: "analytics",  href: "/admin/analytics",   icon: TrendingUp },
+  { key: "pos",        href: "/admin/pos",         icon: Plug },
+  { key: "team",       href: "/admin/team",        icon: Users, ownerOnly: true },
+  { key: "settings",   href: "/admin/settings",    icon: Settings },
 ];
 
 // ---------------------------------------------------------------------------
@@ -70,12 +73,14 @@ interface AdminSidebarProps {
 
 function NavLink({
   item,
+  label,
   active,
   badge,
   collapsed,
   onClick,
 }: {
   item: NavItem;
+  label: string;
   active: boolean;
   badge?: number;
   collapsed: boolean;
@@ -87,7 +92,7 @@ function NavLink({
     <Link
       href={item.href}
       onClick={onClick}
-      title={collapsed ? item.label : undefined}
+      title={collapsed ? label : undefined}
       className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
         active
           ? "bg-ra-accent/15 text-ra-accent"
@@ -103,7 +108,7 @@ function NavLink({
 
       {/* Label — hidden when icon-only */}
       {!collapsed && (
-        <span className="flex-1 truncate">{item.label}</span>
+        <span className="flex-1 truncate">{label}</span>
       )}
 
       {/* Badge */}
@@ -328,6 +333,7 @@ function SidebarContent({
   onSignOut: () => void;
 }) {
   const pathname = usePathname();
+  const t = useTranslations("admin.nav");
 
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.ownerOnly || userRole === "restaurant_owner"
@@ -364,6 +370,7 @@ function SidebarContent({
           <NavLink
             key={item.href}
             item={item}
+            label={t(item.key)}
             active={isActive(item)}
             badge={pendingOrdersCount}
             collapsed={collapsed}

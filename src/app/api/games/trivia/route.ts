@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { getRestaurantFromSlug } from "@/lib/auth";
+import { getPrismaClient } from "@/lib/db";
+import type { Country } from "@/types";
 import { TRIVIA_QUESTIONS } from "@/lib/constants";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/app/api/restaurant/game-settings/route";
 
@@ -47,19 +49,20 @@ export async function POST(req: Request) {
     }
     const { sessionId, restaurantSlug, score = 0 } = parsed.data;
 
-    const restaurant = await prisma.restaurant.findFirst({
-      where:  { slug: restaurantSlug, status: "active" },
-      select: { id: true, branding: true },
-    });
-    if (!restaurant) {
+    let restaurant: Awaited<ReturnType<typeof getRestaurantFromSlug>>;
+    try {
+      restaurant = await getRestaurantFromSlug(restaurantSlug);
+    } catch {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
     }
+
+    const db = getPrismaClient(restaurant.country as Country);
 
     const branding    = (restaurant.branding ?? {}) as Record<string, unknown>;
     const gs          = ({ ...DEFAULT_GAME_SETTINGS, ...(branding.gameSettings ?? {}) }) as GameSettings;
     const winPct      = gs.triviaWin / 100;
 
-    const session = await prisma.tableSession.findUnique({
+    const session = await db.tableSession.findUnique({
       where:  { id: sessionId },
       select: { id: true, restaurantId: true, discount: true },
     });
@@ -70,7 +73,7 @@ export async function POST(req: Request) {
     const won         = score >= 4;
     const discountPct = won ? winPct : 0;
 
-    await prisma.gameResult.create({
+    await db.gameResult.create({
       data: {
         restaurantId: restaurant.id,
         sessionId,
@@ -83,7 +86,7 @@ export async function POST(req: Request) {
 
     // Apply discount if won and no better discount already set
     if (won && (!session.discount || session.discount < discountPct)) {
-      await prisma.tableSession.update({
+      await db.tableSession.update({
         where: { id: sessionId },
         data:  { discount: discountPct },
       });

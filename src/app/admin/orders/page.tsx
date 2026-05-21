@@ -1,8 +1,5 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-
-import { prisma } from "@/lib/db";
 import { OrdersPageClient } from "@/components/admin/OrdersPageClient";
 
 export const dynamic = "force-dynamic";
@@ -15,12 +12,13 @@ export default async function OrdersPage() {
   }
 
   const restaurantId = session.user.restaurantId;
+  const db = getPrismaForSession(session);
 
   // Show today's orders plus any still-active ones from previous days
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const orders = await prisma.order.findMany({
+  const orders = await db.order.findMany({
     where: {
       restaurantId,
       OR: [

@@ -3,49 +3,86 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 
 // ---------------------------------------------------------------------------
-// Prisma singleton — reused across hot-reloads in dev, one instance in prod.
-// Prisma 7 requires a driver adapter: we use @prisma/adapter-pg with node-pg.
+// Multi-schema Prisma setup
+//
+// Canada data  → public schema  (default `prisma` export)
+// Germany data → de schema      (`prismaDE` / `getPrismaClient('DE')`)
+//
+// Both clients share the same Supabase project. The schema is switched via
+// PostgreSQL's search_path, set immediately after each connection is acquired
+// from the pool.
+//
+// RULES:
+//   - User / SubscriptionTier lookups: always use `prisma` (public schema)
+//   - All restaurant-scoped data (Dish, Table, Order, etc.): use getPrismaClient(country)
+//   - Super admin cross-country queries: query both clients and merge
 // ---------------------------------------------------------------------------
 
+type Country = "CA" | "DE";
+
 const globalForPrisma = globalThis as unknown as {
-  pool: Pool | undefined;
-  prisma: PrismaClient | undefined;
+  caPool: Pool | undefined;
+  caPrisma: PrismaClient | undefined;
+  dePool: Pool | undefined;
+  dePrisma: PrismaClient | undefined;
 };
 
-function createClient() {
+function createPoolClient(searchPath: "public" | "de") {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    // Conservative limits for Neon's free-tier pooler
     max: 3,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
   });
 
-  const adapter = new PrismaPg(pool);
-  // The `as any` cast is required because Prisma 7's generated PrismaClient
-  // type signature expects specific adapter interfaces that conflict with
-  // the generic `adapter` typing in some TypeScript configurations.
-  const prisma = new PrismaClient({ adapter } as any);
+  // Set search_path on every new connection so Prisma finds tables in the right schema
+  pool.on("connect", (pgClient) => {
+    pgClient.query(`SET search_path = ${searchPath}`);
+  });
 
-  return { pool, prisma };
+  const adapter = new PrismaPg(pool);
+  const client = new PrismaClient({ adapter } as any);
+  return { pool, client };
 }
 
-export let pool: Pool;
+// ── Canada client (public schema) ───────────────────────────────────────────
+
 export let prisma: PrismaClient;
+export let pool: Pool;
 
-if (globalForPrisma.prisma) {
-  pool = globalForPrisma.pool!;
-  prisma = globalForPrisma.prisma;
+if (globalForPrisma.caPrisma) {
+  prisma = globalForPrisma.caPrisma;
+  pool = globalForPrisma.caPool!;
 } else {
-  const created = createClient();
-  pool = created.pool;
-  prisma = created.prisma;
+  const ca = createPoolClient("public");
+  prisma = ca.client;
+  pool = ca.pool;
 
-  // Cache on globalThis in development to survive hot-module replacement.
-  // In production each Lambda/Worker has its own module scope — no caching needed.
   if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.pool = pool;
-    globalForPrisma.prisma = prisma;
+    globalForPrisma.caPrisma = prisma;
+    globalForPrisma.caPool = pool;
   }
+}
+
+// ── Germany client (de schema) ───────────────────────────────────────────────
+
+export let prismaDE: PrismaClient;
+
+if (globalForPrisma.dePrisma) {
+  prismaDE = globalForPrisma.dePrisma;
+} else {
+  const de = createPoolClient("de");
+  prismaDE = de.client;
+
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.dePrisma = prismaDE;
+    globalForPrisma.dePool = de.pool;
+  }
+}
+
+// ── Factory helper ───────────────────────────────────────────────────────────
+
+export function getPrismaClient(country: Country): PrismaClient {
+  return country === "DE" ? prismaDE : prisma;
 }

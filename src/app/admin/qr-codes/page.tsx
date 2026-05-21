@@ -1,8 +1,5 @@
-import { getRequiredSession } from "@/lib/auth";
+import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-
-import { prisma } from "@/lib/db";
 import { generateTableQR } from "@/lib/qr-generator";
 import { QrCodesPageClient, type QrTable } from "@/components/admin/QrCodesPageClient";
 
@@ -17,13 +14,14 @@ export default async function QrCodesPage() {
 
   const restaurantId   = session.user.restaurantId;
   const restaurantSlug = session.user.restaurantSlug ?? "";
+  const db = getPrismaForSession(session);
 
   const [restaurant, rawTables] = await Promise.all([
-    prisma.restaurant.findUnique({
+    db.restaurant.findUnique({
       where:  { id: restaurantId },
       select: { name: true, slug: true },
     }),
-    prisma.table.findMany({
+    db.table.findMany({
       where:   { restaurantId },
       orderBy: { number: "asc" },
       select: {

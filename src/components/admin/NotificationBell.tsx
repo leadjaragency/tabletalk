@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Bell, ShoppingBag, ExternalLink } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { useTranslations } from "next-intl";
 
 interface RecentOrder {
   id: string;
@@ -28,6 +29,7 @@ function timeAgo(dateStr: string): string {
 
 export function NotificationBell({ count, recentOrders }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("admin.notifications");
 
   return (
     <DropdownMenu.Root open={open} onOpenChange={setOpen}>
@@ -60,7 +62,7 @@ export function NotificationBell({ count, recentOrders }: NotificationBellProps)
           <div className="flex items-center justify-between border-b border-ra-border px-4 py-3">
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-ra-accent" />
-              <span className="text-sm font-semibold text-ra-text">Notifications</span>
+              <span className="text-sm font-semibold text-ra-text">{t("title")}</span>
             </div>
             {count > 0 && (
               <span className="rounded-full bg-ra-accent/15 px-2 py-0.5 text-xs font-medium text-ra-accent">
@@ -74,7 +76,7 @@ export function NotificationBell({ count, recentOrders }: NotificationBellProps)
             {recentOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-8 text-ra-muted">
                 <Bell className="h-8 w-8 opacity-30" />
-                <p className="text-sm">No pending orders</p>
+                <p className="text-sm">{t("noPendingOrders")}</p>
               </div>
             ) : (
               recentOrders.map((order) => (
@@ -122,7 +124,7 @@ export function NotificationBell({ count, recentOrders }: NotificationBellProps)
                 href="/admin/orders"
                 className="flex items-center justify-center gap-1.5 text-xs font-medium text-ra-accent hover:underline outline-none"
               >
-                View all orders
+                {t("viewAllOrders")}
                 <ExternalLink className="h-3 w-3" />
               </Link>
             </DropdownMenu.Item>

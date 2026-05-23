@@ -15,17 +15,18 @@ import { useParams, useSearchParams } from "next/navigation";
 // ---------------------------------------------------------------------------
 
 export interface CustomerRestaurant {
-  id:       string;
-  name:     string;
-  slug:     string;
-  tagline:  string | null;
-  cuisine:  string;
-  hours:    unknown;
-  taxRate:  number;
-  currency: string;
-  phone:    string | null;
-  email:    string | null;
-  address:  string | null;
+  id:              string;
+  name:            string;
+  slug:            string;
+  tagline:         string | null;
+  cuisine:         string;
+  hours:           unknown;
+  taxRate:         number;
+  currency:        string;
+  phone:           string | null;
+  email:           string | null;
+  address:         string | null;
+  defaultLanguage: string;
 }
 
 export interface CustomerTable {

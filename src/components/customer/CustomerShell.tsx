@@ -5,6 +5,16 @@ import { useSearchParams } from "next/navigation";
 import { CustomerProvider, useCustomer } from "@/lib/CustomerContext";
 import { BottomNav } from "@/components/customer/BottomNav";
 import { UtensilsCrossed, AlertCircle, RefreshCw } from "lucide-react";
+import { NextIntlClientProvider } from "next-intl";
+import enMessages from "../../../messages/en.json";
+import deMessages from "../../../messages/de.json";
+
+const messageMap: Record<string, object> = {
+  en: enMessages,
+  de: deMessages,
+  fr: enMessages,
+  es: enMessages,
+};
 
 // ---------------------------------------------------------------------------
 // Error / loading full-screen states (cu-* theme)
@@ -94,23 +104,33 @@ function ShellInner({
 }) {
   const searchParams      = useSearchParams();
   const restaurantSlug    = searchParams.get("restaurant") ?? "";
-  const { loading, error, tableOccupied, sessionEnded } = useCustomer();
+  const { loading, error, tableOccupied, sessionEnded, restaurant } = useCustomer();
 
   if (loading)       return <LoadingScreen />;
   if (tableOccupied) return <OccupiedScreen />;
   if (sessionEnded)  return <SessionEndedScreen />;
   if (error)         return <ErrorScreen message={error} />;
 
-  return (
-    <div className="flex min-h-dvh flex-col">
-      {/* Scrollable page content — leave room for 64px bottom nav */}
-      <main className="flex-1 overflow-y-auto pb-16">
-        {children}
-      </main>
+  const locale   = (restaurant?.defaultLanguage ?? "en") as string;
+  const messages = messageMap[locale] ?? messageMap.en;
 
-      {/* Fixed bottom navigation */}
-      <BottomNav tableId={tableId} restaurantSlug={restaurantSlug} />
-    </div>
+  return (
+    <NextIntlClientProvider
+      locale={locale}
+      messages={messages}
+      onError={(e) => { if (e.code !== "MISSING_MESSAGE") console.error(e); }}
+      getMessageFallback={({ key }) => key}
+    >
+      <div className="flex min-h-dvh flex-col">
+        {/* Scrollable page content — leave room for 64px bottom nav */}
+        <main className="flex-1 overflow-y-auto pb-16">
+          {children}
+        </main>
+
+        {/* Fixed bottom navigation */}
+        <BottomNav tableId={tableId} restaurantSlug={restaurantSlug} />
+      </div>
+    </NextIntlClientProvider>
   );
 }
 

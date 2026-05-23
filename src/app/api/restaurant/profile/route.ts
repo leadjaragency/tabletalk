@@ -17,7 +17,7 @@ export async function GET() {
       select: {
         id: true, name: true, slug: true, cuisine: true, tagline: true,
         phone: true, email: true, address: true, hours: true,
-        taxRate: true, currency: true, logoUrl: true,
+        taxRate: true, currency: true, logoUrl: true, defaultLanguage: true,
         tier: { select: { name: true, features: true } },
       },
     });
@@ -30,14 +30,15 @@ export async function GET() {
 }
 
 const UpdateSchema = z.object({
-  name:     z.string().min(1).max(100).optional(),
-  cuisine:  z.string().min(1).max(60).optional(),
-  tagline:  z.string().max(200).optional(),
-  phone:    z.string().max(30).optional(),
-  email:    z.string().email().optional(),
-  address:  z.string().max(300).optional(),
-  taxRate:  z.number().min(0).max(1).optional(),
-  hours:    z.object({ open: z.string(), close: z.string() }).optional(),
+  name:            z.string().min(1).max(100).optional(),
+  cuisine:         z.string().min(1).max(60).optional(),
+  tagline:         z.string().max(200).optional(),
+  phone:           z.string().max(30).optional(),
+  email:           z.string().email().optional(),
+  address:         z.string().max(300).optional(),
+  taxRate:         z.number().min(0).max(1).optional(),
+  hours:           z.object({ open: z.string(), close: z.string() }).optional(),
+  defaultLanguage: z.enum(["en", "de", "fr", "es"]).optional(),
 });
 
 export async function PUT(req: Request) {

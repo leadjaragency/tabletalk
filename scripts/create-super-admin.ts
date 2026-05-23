@@ -49,6 +49,16 @@ async function main() {
   if (alreadyExists) {
     console.log(`⚠️  Supabase user already exists: ${alreadyExists.id}`);
     supabaseUserId = alreadyExists.id;
+
+    // Always sync metadata in case it's missing or stale
+    await supabaseAdmin.auth.admin.updateUserById(supabaseUserId, {
+      user_metadata: {
+        name: "Super Admin",
+        role: "super_admin",
+        isActive: true,
+      },
+    });
+    console.log(`✅  Supabase user metadata synced`);
   } else {
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email: SUPER_ADMIN_EMAIL,

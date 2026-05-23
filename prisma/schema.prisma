@@ -35,8 +35,9 @@ model Restaurant {
   address       String?
   hours         Json?
   branding      Json?
-  country       String             @default("CA")  // "CA" | "DE"
-  taxRate       Float              @default(0.08)
+  country         String             @default("CA")  // "CA" | "DE"
+  defaultLanguage String             @default("en")  // "en" | "de" | "fr" | "es"
+  taxRate         Float              @default(0.08)
   currency      String             @default("CAD")
   status            String             @default("pending")
   trialStartsAt     DateTime?

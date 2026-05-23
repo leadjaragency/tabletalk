@@ -169,7 +169,7 @@ export async function POST(req: Request) {
     },
     currentCart:      cart,
     activePromotions,
-    preferredLanguage: restaurant.country === "DE" ? "de" : "en",
+    preferredLanguage: restaurant.defaultLanguage ?? "en",
   });
 
   // ── Persist user message (skip for greeting init) ────────────────────

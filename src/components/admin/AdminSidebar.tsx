@@ -138,6 +138,9 @@ function RestaurantDropdown({
   collapsed: boolean;
   onClose?: () => void;
 }) {
+  const tLayout = useTranslations("admin.layout");
+  const tNav    = useTranslations("admin.nav");
+
   return (
     <DropdownMenu.Root>
       <div className={`flex items-center border-b border-ra-border py-4 ${collapsed ? "justify-center px-3" : "gap-3 px-5"}`}>
@@ -154,7 +157,7 @@ function RestaurantDropdown({
                 <p className="truncate text-sm font-semibold text-ra-text leading-tight">
                   {restaurantName}
                 </p>
-                <p className="text-xs text-ra-muted leading-tight">Admin Portal</p>
+                <p className="text-xs text-ra-muted leading-tight">{tLayout("adminPortal")}</p>
               </div>
             )}
           </button>
@@ -180,7 +183,7 @@ function RestaurantDropdown({
         >
           <div className="px-3 py-2.5 border-b border-ra-border">
             <p className="text-xs font-semibold text-ra-text truncate">{restaurantName}</p>
-            <p className="text-xs text-ra-muted">Restaurant Admin</p>
+            <p className="text-xs text-ra-muted">{tLayout("restaurantAdmin")}</p>
           </div>
 
           <div className="p-1.5 space-y-0.5">
@@ -190,7 +193,7 @@ function RestaurantDropdown({
                 className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-colors outline-none cursor-pointer"
               >
                 <Settings className="h-4 w-4" />
-                Settings
+                {tNav("settings")}
               </Link>
             </DropdownMenu.Item>
             <DropdownMenu.Item asChild>
@@ -199,7 +202,7 @@ function RestaurantDropdown({
                 className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-colors outline-none cursor-pointer"
               >
                 <BarChart2 className="h-4 w-4" />
-                Analytics
+                {tNav("analytics")}
               </Link>
             </DropdownMenu.Item>
           </div>
@@ -226,6 +229,7 @@ function UserFooter({
   collapsed: boolean;
   onSignOut: () => void;
 }) {
+  const tLayout = useTranslations("admin.layout");
   const roleLabel = userRole.replace("restaurant_", "");
 
   if (collapsed) {
@@ -289,7 +293,7 @@ function UserFooter({
                   className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-colors outline-none cursor-pointer"
                 >
                   <Settings className="h-4 w-4" />
-                  Account Settings
+                  {tLayout("accountSettings")}
                 </Link>
               </DropdownMenu.Item>
             </div>
@@ -303,7 +307,7 @@ function UserFooter({
         className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
       >
         <LogOut className="h-4 w-4" />
-        Sign Out
+        {tLayout("signOut")}
       </button>
     </div>
   );

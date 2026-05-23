@@ -185,9 +185,13 @@ export function buildWaiterPrompt({
     ? `Yes — ${(session.discount * 100).toFixed(0)}% discount applied`
     : "None";
 
-  const languageInstruction = preferredLanguage === "de"
-    ? `LANGUAGE: This is a German restaurant. Always respond in German (Deutsch) unless the customer clearly writes in another language — in that case match their language.`
-    : `LANGUAGE: Detect the language the customer writes in and always respond in that same language. Default to English if unclear.`;
+  const languageInstructions: Record<string, string> = {
+    de: `LANGUAGE: This is a German restaurant. Greet in German. Auto-detect customer language and respond in their language.`,
+    fr: `LANGUAGE: This is a French restaurant. Greet in French. Auto-detect customer language and respond in their language.`,
+    es: `LANGUAGE: This is a Spanish restaurant. Greet in Spanish. Auto-detect customer language and respond in their language.`,
+    en: `LANGUAGE: Detect the language the customer writes in and always respond in that same language. Default to English if unclear.`,
+  };
+  const languageInstruction = languageInstructions[preferredLanguage ?? "en"] ?? languageInstructions.en;
 
   return `\
 ═══════════════════════════════════════

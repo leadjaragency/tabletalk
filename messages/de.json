@@ -338,6 +338,21 @@
       "resetData": "Demo-Daten zurücksetzen",
       "resetConfirm": "Alle Bestellungen und Sitzungen werden gelöscht. Sind Sie sicher?",
       "savedSuccess": "Einstellungen erfolgreich gespeichert"
+    },
+    "layout": {
+      "restaurantAdmin": "Restaurant-Verwaltung",
+      "posConnected": "Kassensystem verbunden",
+      "posOffline": "Kassensystem offline",
+      "adminPortal": "Admin-Portal",
+      "accountSettings": "Kontoeinstellungen",
+      "signOut": "Abmelden",
+      "language": "Sprache",
+      "languageSoon": "Bald"
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "noPendingOrders": "Keine ausstehenden Bestellungen",
+      "viewAllOrders": "Alle Bestellungen anzeigen"
     }
   },
   "superAdmin": {

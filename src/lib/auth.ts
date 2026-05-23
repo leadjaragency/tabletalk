@@ -112,13 +112,14 @@ export async function getRestaurantFromSlug(slug: string) {
     phone:    true,
     email:    true,
     address:  true,
-    hours:    true,
-    taxRate:  true,
-    currency: true,
-    country:  true,
-    status:   true,
-    branding: true,
-    tier:     { select: { features: true } },
+    hours:           true,
+    taxRate:         true,
+    currency:        true,
+    country:         true,
+    defaultLanguage: true,
+    status:          true,
+    branding:        true,
+    tier:            { select: { features: true } },
   } as const;
 
   // Try Canadian restaurants first

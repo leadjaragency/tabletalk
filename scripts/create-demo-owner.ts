@@ -59,6 +59,20 @@ async function main() {
   if (alreadyExists) {
     console.log(`⚠️  Supabase user already exists: ${alreadyExists.id}`);
     supabaseUserId = alreadyExists.id;
+
+    // Extend trial far into the future and sync all metadata
+    const farFuture = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    await supabaseAdmin.auth.admin.updateUserById(supabaseUserId, {
+      user_metadata: {
+        name: dbUser.name,
+        role: "restaurant_owner",
+        isActive: true,
+        restaurantId: dbUser.restaurantId,
+        restaurantSlug: dbUser.restaurant?.slug ?? "saffron-palace",
+        trialEndsAt: farFuture,
+      },
+    });
+    console.log(`✅  Supabase user metadata synced (trial extended 1 year)`);
   } else {
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email: OWNER_EMAIL,
@@ -70,7 +84,7 @@ async function main() {
         isActive: true,
         restaurantId: dbUser.restaurantId,
         restaurantSlug: dbUser.restaurant?.slug ?? "saffron-palace",
-        trialEndsAt: dbUser.restaurant?.trialEndsAt?.toISOString() ?? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        trialEndsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
       },
     });
 

@@ -1,7 +1,6 @@
 import { getRequiredSession, getPrismaForSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { getAdminLocale } from "@/lib/admin-locale";
 import { AutoRefresh } from "@/components/admin/AutoRefresh";
 import {
   LayoutGrid,
@@ -254,8 +253,7 @@ export default async function AdminDashboardPage() {
   if (!session?.user.restaurantId) redirect("/auth/login");
 
   const db = getPrismaForSession(session);
-  const locale = await getAdminLocale();
-  const t  = await getTranslations({ locale, namespace: "admin.dashboard" });
+  const t  = await getTranslations("admin.dashboard");
 
   const {
     activeTables,

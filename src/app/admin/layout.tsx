@@ -6,7 +6,6 @@ import { LanguageSelector } from "@/components/admin/LanguageSelector";
 import { Wifi, WifiOff } from "lucide-react";
 import { Toaster } from "sonner";
 import { NextIntlClientProvider } from "next-intl";
-import { getTranslations } from "next-intl/server";
 import { isValidLocale } from "@/lib/admin-locale";
 import enMessages from "../../../messages/en.json";
 import deMessages from "../../../messages/de.json";
@@ -70,7 +69,12 @@ export default async function AdminLayout({
     ? restaurant.defaultLanguage
     : "en";
   const adminMessages = adminMessageMap[restaurantLocale] ?? adminMessageMap.en;
-  const t = await getTranslations({ locale: restaurantLocale, namespace: "admin.layout" });
+
+  // Read layout strings directly from the loaded messages object — avoids
+  // getTranslations() which re-invokes getRequestConfig and can fail on Vercel.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const layoutStrings = (adminMessages as any)?.admin?.layout ?? {};
+  const t = (key: string): string => (layoutStrings[key] as string) ?? key;
 
   // ── Recent pending orders for notification bell ────────────────────────
   const recentOrdersRaw = await db.order.findMany({

@@ -23,7 +23,6 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight,
   BarChart2,
 } from "lucide-react";
 
@@ -153,7 +152,7 @@ function RestaurantDropdown({
             title="Restaurant options"
             className="flex items-center gap-3 rounded-lg hover:opacity-80 transition-opacity focus:outline-none"
           >
-            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ra-accent text-sm font-bold text-ra-bg overflow-hidden">
+            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-ra-accent text-lg font-bold text-ra-bg overflow-hidden">
               {restaurantLogoUrl ? (
                 <Image src={restaurantLogoUrl} alt={restaurantName} fill className="object-cover" unoptimized />
               ) : (
@@ -255,61 +254,7 @@ function UserFooter({
   }
 
   return (
-    <div className="border-t border-ra-border p-3 space-y-2">
-      {/* Profile dropdown */}
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <button className="flex w-full items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/5 transition-colors focus:outline-none group">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ra-accent/20 text-xs font-bold text-ra-accent">
-              {userName.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1 text-left">
-              <p className="truncate text-xs font-medium text-ra-text">{userName}</p>
-              <p className="text-xs text-ra-muted capitalize">{roleLabel}</p>
-            </div>
-            <ChevronRight className="h-3.5 w-3.5 text-ra-muted opacity-0 group-hover:opacity-100 transition-opacity" />
-          </button>
-        </DropdownMenu.Trigger>
-
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            side="right"
-            align="end"
-            sideOffset={8}
-            className="z-[100] w-56 rounded-xl border border-ra-border bg-ra-surface shadow-2xl shadow-black/40 animate-in fade-in-0 zoom-in-95 duration-100"
-          >
-            {/* User info header */}
-            <div className="px-3 py-3 border-b border-ra-border">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ra-accent/20 text-sm font-bold text-ra-accent">
-                  {userName.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-ra-text truncate">{userName}</p>
-                  <p className="text-xs text-ra-muted truncate">{userEmail}</p>
-                </div>
-              </div>
-              <span className="mt-2 inline-flex rounded-full bg-ra-accent/10 px-2 py-0.5 text-[11px] font-medium text-ra-accent capitalize">
-                {roleLabel}
-              </span>
-            </div>
-
-            <div className="p-1.5">
-              <DropdownMenu.Item asChild>
-                <Link
-                  href="/admin/settings"
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ra-muted hover:bg-slate-100 hover:text-ra-text transition-colors outline-none cursor-pointer"
-                >
-                  <Settings className="h-4 w-4" />
-                  {tLayout("accountSettings")}
-                </Link>
-              </DropdownMenu.Item>
-            </div>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
-
-      {/* Sign Out — clearly visible red button */}
+    <div className="border-t border-ra-border p-3">
       <button
         onClick={onSignOut}
         className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"

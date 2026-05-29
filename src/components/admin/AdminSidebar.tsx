@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TopLoadingBar } from "@/components/ui/TopLoadingBar";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase";
@@ -61,6 +62,7 @@ const NAV_ITEMS: NavItem[] = [
 
 interface AdminSidebarProps {
   restaurantName: string;
+  restaurantLogoUrl: string | null;
   pendingOrdersCount: number;
   userRole: string;
   userName: string;
@@ -131,10 +133,12 @@ function NavLink({
 
 function RestaurantDropdown({
   restaurantName,
+  restaurantLogoUrl,
   collapsed,
   onClose,
 }: {
   restaurantName: string;
+  restaurantLogoUrl: string | null;
   collapsed: boolean;
   onClose?: () => void;
 }) {
@@ -149,8 +153,12 @@ function RestaurantDropdown({
             title="Restaurant options"
             className="flex items-center gap-3 rounded-lg hover:opacity-80 transition-opacity focus:outline-none"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ra-accent text-sm font-bold text-ra-bg">
-              {restaurantName.charAt(0)}
+            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ra-accent text-sm font-bold text-ra-bg overflow-hidden">
+              {restaurantLogoUrl ? (
+                <Image src={restaurantLogoUrl} alt={restaurantName} fill className="object-cover" unoptimized />
+              ) : (
+                restaurantName.charAt(0)
+              )}
             </div>
             {!collapsed && (
               <div className="min-w-0 text-left">
@@ -319,6 +327,7 @@ function UserFooter({
 
 function SidebarContent({
   restaurantName,
+  restaurantLogoUrl,
   pendingOrdersCount,
   userRole,
   userName,
@@ -328,6 +337,7 @@ function SidebarContent({
   onSignOut,
 }: {
   restaurantName: string;
+  restaurantLogoUrl: string | null;
   pendingOrdersCount: number;
   userRole: string;
   userName: string;
@@ -364,6 +374,7 @@ function SidebarContent({
       {/* Logo / Restaurant Name with dropdown */}
       <RestaurantDropdown
         restaurantName={restaurantName}
+        restaurantLogoUrl={restaurantLogoUrl}
         collapsed={collapsed}
         onClose={onClose}
       />
@@ -401,6 +412,7 @@ function SidebarContent({
 
 export function AdminSidebar({
   restaurantName,
+  restaurantLogoUrl,
   pendingOrdersCount,
   userRole,
   userName,
@@ -448,6 +460,7 @@ export function AdminSidebar({
       >
         <SidebarContent
           restaurantName={restaurantName}
+          restaurantLogoUrl={restaurantLogoUrl}
           pendingOrdersCount={pendingOrdersCount}
           userRole={userRole}
           userName={userName}
@@ -465,6 +478,7 @@ export function AdminSidebar({
       >
         <SidebarContent
           restaurantName={restaurantName}
+          restaurantLogoUrl={restaurantLogoUrl}
           pendingOrdersCount={pendingOrdersCount}
           userRole={userRole}
           userName={userName}
@@ -481,6 +495,7 @@ export function AdminSidebar({
       >
         <SidebarContent
           restaurantName={restaurantName}
+          restaurantLogoUrl={restaurantLogoUrl}
           pendingOrdersCount={pendingOrdersCount}
           userRole={userRole}
           userName={userName}

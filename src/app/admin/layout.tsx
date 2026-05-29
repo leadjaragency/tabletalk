@@ -48,6 +48,7 @@ export default async function AdminLayout({
       name: true,
       status: true,
       defaultLanguage: true,
+      logoUrl: true,
       _count: {
         select: {
           orders: { where: { status: { in: ["received", "preparing"] } } },
@@ -106,6 +107,7 @@ export default async function AdminLayout({
       {/* Sidebar */}
       <AdminSidebar
         restaurantName={restaurant.name}
+        restaurantLogoUrl={restaurant.logoUrl ?? null}
         pendingOrdersCount={pendingOrdersCount}
         userRole={role}
         userName={userName ?? "User"}

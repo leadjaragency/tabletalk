@@ -6,13 +6,13 @@ import { LanguageSelector } from "@/components/admin/LanguageSelector";
 import { Wifi, WifiOff } from "lucide-react";
 import { Toaster } from "sonner";
 import { isValidLocale } from "@/lib/admin-locale";
+import { NextIntlClientProvider } from "next-intl";
 import enMessages from "../../../messages/en.json";
 import deMessages from "../../../messages/de.json";
 import frMessages from "../../../messages/fr.json";
 import esMessages from "../../../messages/es.json";
 
-// Message map used for server-side topbar string lookups (t() below).
-// Client components use the root layout's NextIntlClientProvider directly.
+// Message map used for both server-side t() and the nested NextIntlClientProvider.
 const adminMessageMap: Record<string, object> = {
   en: enMessages,
   de: deMessages,
@@ -101,6 +101,7 @@ export default async function AdminLayout({
   const posConnected = true;
 
   return (
+    <NextIntlClientProvider locale={restaurantLocale} messages={adminMessages}>
     <div className="zone-admin min-h-screen bg-ra-bg text-ra-text">
       {/* Sidebar */}
       <AdminSidebar
@@ -165,5 +166,6 @@ export default async function AdminLayout({
       </div>
       <Toaster position="top-right" theme="dark" richColors />
     </div>
+    </NextIntlClientProvider>
   );
 }

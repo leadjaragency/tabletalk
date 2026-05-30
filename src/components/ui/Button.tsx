@@ -17,12 +17,12 @@ const buttonVariants = cva(
         outline:
           "border border-current bg-transparent hover:bg-white/10 active:bg-white/20 focus-visible:ring-current",
         ghost:
-          "bg-transparent hover:bg-white/10 active:bg-white/20 focus-visible:ring-white/30",
+          "bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100 focus-visible:ring-slate-300",
         danger:
           "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-500 shadow-sm",
-        // Customer-zone amber variant
+        // Brand Gold — primary action in modals
         amber:
-          "bg-amber-500 text-stone-900 hover:bg-amber-600 active:bg-amber-700 focus-visible:ring-amber-400 shadow-sm font-semibold",
+          "bg-[#C6A34E] text-white hover:bg-[#A8873A] active:bg-[#8F6F2E] focus-visible:ring-[#C6A34E]/50 shadow-sm font-semibold",
         // Customer-zone warm accent
         warm:
           "bg-[#D4740E] text-white hover:bg-[#B85C0A] active:bg-[#9A4D09] focus-visible:ring-[#D4740E] shadow-sm",

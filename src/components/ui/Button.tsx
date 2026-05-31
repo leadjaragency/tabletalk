@@ -17,7 +17,7 @@ const buttonVariants = cva(
         outline:
           "border border-current bg-transparent hover:bg-white/10 active:bg-white/20 focus-visible:ring-current",
         ghost:
-          "bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100 focus-visible:ring-slate-300",
+          "bg-transparent border border-white/20 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/30 active:bg-white/15 focus-visible:ring-white/30",
         danger:
           "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-500 shadow-sm",
         // Brand Gold — primary action in modals
